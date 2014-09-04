@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		83CBB2AC19B8C14D00DF3FF0 /* red.png in Resources */ = {isa = PBXBuildFile; fileRef = 83CBB2AB19B8C14D00DF3FF0 /* red.png */; };
 		BE05A7E817C55B9C00F0B252 /* MainSpec.json in Resources */ = {isa = PBXBuildFile; fileRef = BE05A7E717C55B9C00F0B252 /* MainSpec.json */; };
 		BE05A89117C8002A00F0B252 /* KFTunableSpec.m in Sources */ = {isa = PBXBuildFile; fileRef = BE05A88F17C8002A00F0B252 /* KFTunableSpec.m */; };
 		BE1B52FE172F5A5400AA82FB /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BE1B52FD172F5A5400AA82FB /* UIKit.framework */; };
@@ -23,6 +24,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		83CBB2AB19B8C14D00DF3FF0 /* red.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = red.png; sourceTree = "<group>"; };
 		BE05A7E717C55B9C00F0B252 /* MainSpec.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = MainSpec.json; sourceTree = "<group>"; };
 		BE05A88F17C8002A00F0B252 /* KFTunableSpec.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = KFTunableSpec.m; path = ../../KFTunableSpec.m; sourceTree = "<group>"; };
 		BE05A89017C8002A00F0B252 /* KFTunableSpec.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = KFTunableSpec.h; path = ../../KFTunableSpec.h; sourceTree = "<group>"; };
@@ -103,6 +105,7 @@
 		BE1B5304172F5A5400AA82FB /* Supporting Files */ = {
 			isa = PBXGroup;
 			children = (
+				83CBB2AB19B8C14D00DF3FF0 /* red.png */,
 				BE1B5305172F5A5400AA82FB /* Spring Playground-Info.plist */,
 				BE1B5306172F5A5400AA82FB /* InfoPlist.strings */,
 				BE1B5309172F5A5400AA82FB /* main.m */,
@@ -170,6 +173,7 @@
 				BE1B5308172F5A5400AA82FB /* InfoPlist.strings in Resources */,
 				BE1B5310172F5A5400AA82FB /* Default.png in Resources */,
 				BE1B5312172F5A5400AA82FB /* Default@2x.png in Resources */,
+				83CBB2AC19B8C14D00DF3FF0 /* red.png in Resources */,
 				BE1B5314172F5A5400AA82FB /* Default-568h@2x.png in Resources */,
 				BE1B531A172F5A5400AA82FB /* ViewController.xib in Resources */,
 			);

@@ -76,6 +76,8 @@ Sample JSON:
 - (BOOL)boolForKey:(NSString *)defaultName;
 - (void)withBoolForKey:(NSString *)key owner:(id)weaklyHeldOwner maintain:(void (^)(id owner, BOOL flag))maintenanceBlock;
 
+- (UIColor *)colorForKey:(NSString *)key;
+- (void)withColorForKey:(NSString *)key owner:(id)weaklyHeldOwner maintain:(void (^)(id owner, UIColor *flag))maintenanceBlock;
 
 // useful as a metrics dictionary in -[NSLayoutConstraint constraintsWithVisualFormat:options:metrics:views:]
 - (NSDictionary *)dictionaryRepresentation;

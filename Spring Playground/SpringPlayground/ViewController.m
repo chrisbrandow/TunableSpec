@@ -69,10 +69,11 @@
     
     [[[self shapeView] layer] setShadowOpacity:1];
     [[[self shapeView] layer] setShadowOffset:CGSizeMake(0,0)];
-    
+
     UIInterpolatingMotionEffect *xMotionEffect = [[UIInterpolatingMotionEffect alloc] initWithKeyPath:@"layer.shadowOffset.width" type:UIInterpolatingMotionEffectTypeTiltAlongHorizontalAxis];
     UIInterpolatingMotionEffect *yMotionEffect = [[UIInterpolatingMotionEffect alloc] initWithKeyPath:@"layer.shadowOffset.height" type:UIInterpolatingMotionEffectTypeTiltAlongVerticalAxis];
     [spec withDoubleForKey:@"Depth" owner:self maintain:^(id owner, double doubleValue) {
+
         [xMotionEffect setMinimumRelativeValue:@(-doubleValue)];
         [xMotionEffect setMaximumRelativeValue:@(doubleValue)];
         [yMotionEffect setMinimumRelativeValue:@(-doubleValue)];
@@ -87,6 +88,12 @@
     }];
     
     [[[self shapeView] layer] setCornerRadius:[[self shapeView] bounds].size.width/2];
+
+    
+    [spec withColorForKey:@"Color" owner:self maintain:^(id owner, UIColor *flag) {
+        [self.shapeView setBackgroundColor:flag ?: self.shapeView.backgroundColor];
+    }];
+
 }
 
 - (IBAction)handlePan:(UIPanGestureRecognizer *)reco {

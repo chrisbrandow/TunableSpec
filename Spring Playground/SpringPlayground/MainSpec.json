@@ -1,10 +1,15 @@
 [
   {
-    "sliderMaxValue" : 2,
-    "key" : "SpringDuration",
-    "label" : "Duration",
-    "sliderValue" : 0.5756578999999999,
-    "sliderMinValue" : 0
+  "colorValue" : "0.2, 0.3, 0.5, 1",
+  "key" : "Color",
+  "label" : "BackColor"
+  },
+  {
+  "sliderMaxValue" : 2,
+  "key" : "SpringDuration",
+  "label" : "Duration",
+  "sliderValue" : 0.5756578999999999,
+  "sliderMinValue" : 0
   },
   {
     "sliderMaxValue" : 1,
