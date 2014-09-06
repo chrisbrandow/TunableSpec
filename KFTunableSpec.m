@@ -256,6 +256,8 @@ static NSString *CamelCaseToSpaces(NSString *camelCaseString) {
 }
 
 - (void)hideCallout:(id)sender {
+    NSLog(@"%s", __PRETTY_FUNCTION__);
+
     [UIView animateWithDuration:0.15 animations:^{
         [[self calloutView] setAlpha:0.0];
     }];
@@ -314,10 +316,9 @@ typedef NS_ENUM(NSUInteger, KFSliderColorComponent) {
     if (json[@"colorValue"] == nil) {
         return nil;
     } else {
-        NSLog(@"%s", __PRETTY_FUNCTION__);
-        NSLog(@"json colorval %@",json[@"colorValue"]);
+
         NSMutableDictionary *newJSON = [NSMutableDictionary dictionaryWithDictionary:json];
-//        newJSON[@"colorValue"] = colorWithHexString(json[@"colorValue"]);
+
         newJSON[@"colorValue"] = [self colorForString:json[@"colorValue"]];
         self = [super initWithJSONRepresentation:newJSON];
         self.sliderMaxValue = @(1);
@@ -330,10 +331,14 @@ typedef NS_ENUM(NSUInteger, KFSliderColorComponent) {
     NSLog(@"%s", __PRETTY_FUNCTION__);
 
     if (longGR.state == UIGestureRecognizerStateBegan) {
-        NSLog(@"began");
         self.colorComponent += (self.colorComponent < 3) ? 1 : -3;
+        [self hideCallout:longGR];
         [self updateSpecColor];
 
+    } else {
+        [[self.calloutView label] setText:[NSString stringWithFormat:@"%@: %.0f", self.colorStrings[self.colorComponent], 255*self.slider.value/self.slider.maximumValue]];
+        [self updateCalloutXCenter:longGR];
+        [self showCallout:longGR];
     }
 
 }
@@ -349,7 +354,6 @@ typedef NS_ENUM(NSUInteger, KFSliderColorComponent) {
     if (numComponents == 4) {
         const CGFloat *components = CGColorGetComponents(color);
         CGFloat red = components[self.colorComponent];
-        NSLog(@"red: %.2f", red);
         return red;
 
     }
@@ -358,8 +362,6 @@ typedef NS_ENUM(NSUInteger, KFSliderColorComponent) {
 }
 
 - (void)updateSpecColor {
-    
-    NSLog(@"color component: %zd", self.colorComponent);
     
     [[self slider] setValue:[self currentSliderValue]];
     
@@ -386,13 +388,11 @@ typedef NS_ENUM(NSUInteger, KFSliderColorComponent) {
         }
     }
     
-    [[self.calloutView label] setText:[NSString stringWithFormat:@"%@: %.0f", self.colorStrings[self.colorComponent], 256*self.slider.value/self.slider.maximumValue]];
+//    [[self.calloutView label] setText:[NSString stringWithFormat:@"%@: %.0f", self.colorStrings[self.colorComponent], 255*self.slider.value/self.slider.maximumValue]];
     
 }
 
 - (UIColor *)colorForString:(NSString *)colorString {
-
-    NSLog(@"color string %@", colorString);
 
     return ([colorString rangeOfString:@","].location != NSNotFound) ? colorWithRGBString(colorString) : colorWithHexString(colorString);;
 }
@@ -493,15 +493,16 @@ static UIColor *colorWithHexString(NSString *hexString) {
         [callout setAlpha:0];
 
         UILongPressGestureRecognizer *longGR = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(changeColor:)];
+        longGR.numberOfTouchesRequired = 1;
         longGR.minimumPressDuration = .5;
         [slider addGestureRecognizer:longGR];
 
-        [self withOwner:self maintain:^(id owner, id objValue) { [[callout label] setText:[NSString stringWithFormat:@"%@: %.0f", self.colorStrings[self.colorComponent], 255*self.slider.value/self.slider.maximumValue]]; NSLog(@"maintain"); }];
+        [self withOwner:self maintain:^(id owner, id objValue) {
+            [[callout label] setText:[NSString stringWithFormat:@"%@: %.0f", self.colorStrings[self.colorComponent], 255*self.slider.value/self.slider.maximumValue]];
+        }];
         [slider addTarget:self action:@selector(showCallout:) forControlEvents:UIControlEventTouchDown];
         [slider addTarget:self action:@selector(updateCalloutXCenter:) forControlEvents:UIControlEventValueChanged];
         [slider addTarget:self action:@selector(hideCallout:) forControlEvents:UIControlEventTouchUpInside|UIControlEventTouchUpOutside|UIControlEventTouchCancel];
-
-
         
         [self setCalloutView:callout];
         [self setContainer:container];
@@ -510,60 +511,28 @@ static UIColor *colorWithHexString(NSString *hexString) {
 }
 
 - (void)takeSliderValue:(UISlider *)slider {
+    
     NSLog(@"%s", __PRETTY_FUNCTION__);
     
     CGColorRef color = [[self colorValue] CGColor];
-    
+
     int numComponents = CGColorGetNumberOfComponents(color);
     
-    
     if (numComponents == 4) {
-        const CGFloat *components = CGColorGetComponents(color);
         
+        const CGFloat *components = CGColorGetComponents(color);
+    
         NSMutableArray *c = [NSMutableArray new];
         for (int i = 0; i < 4; i++) {
             c[i] = @(components[i]);
         }
-        
-        CGFloat red = [slider value]/self.slider.maximumValue;
-        c[self.colorComponent] = @(red);
+
+        c[self.colorComponent] = @([slider value]/[slider maximumValue]);
         
         [self setColorValue:[UIColor colorWithRed:[c[0] floatValue] green:[c[1] floatValue] blue:[c[2] floatValue] alpha:[c[3] floatValue]]];
-        NSLog(@"red: %.2f", red);
     }
     
 }
-
-//- (id)sliderValue {
-//    NSLog(@"%s", __PRETTY_FUNCTION__);
-//    
-//    return @([self currentSliderValue]);//[self objectValue];
-//}
-
-//- (void)setSliderValue:(id)sliderValue {
-//    NSLog(@"%s %.2f", __PRETTY_FUNCTION__, [sliderValue floatValue]);
-//    
-//    CGColorRef color = [[self colorValue] CGColor];
-//    
-//    int numComponents = CGColorGetNumberOfComponents(color);
-//    
-//
-//    if (numComponents == 4) {
-//        const CGFloat *components = CGColorGetComponents(color);
-//        
-//        NSMutableArray *c = [NSMutableArray new];
-//        for (int i = 0; i < 4; i++) {
-//            c[i] = @(components[i]);
-//        }
-//        
-//        CGFloat red = [sliderValue floatValue]/self.slider.maximumValue;
-//        c[self.colorComponent] = @(red);
-//        
-//        [self setColorValue:[UIColor colorWithRed:[c[0] floatValue] green:[c[1] floatValue] blue:[c[2] floatValue] alpha:[c[3] floatValue]]];
-//        NSLog(@"red: %.2f", red);
-//    }
-//    
-//}
 
 -(id)colorValue {
     
@@ -571,7 +540,6 @@ static UIColor *colorWithHexString(NSString *hexString) {
 }
 
 - (void)setColorValue:(UIColor *)color {
-    NSLog(@"%s %@", __PRETTY_FUNCTION__, color);
 
     [self setObjectValue:color];
 
