@@ -69,6 +69,7 @@
     
     [[[self shapeView] layer] setShadowOpacity:1];
     [[[self shapeView] layer] setShadowOffset:CGSizeMake(0,0)];
+    [[[self shapeView] layer] setBorderWidth:3];
 
     UIInterpolatingMotionEffect *xMotionEffect = [[UIInterpolatingMotionEffect alloc] initWithKeyPath:@"layer.shadowOffset.width" type:UIInterpolatingMotionEffectTypeTiltAlongHorizontalAxis];
     UIInterpolatingMotionEffect *yMotionEffect = [[UIInterpolatingMotionEffect alloc] initWithKeyPath:@"layer.shadowOffset.height" type:UIInterpolatingMotionEffectTypeTiltAlongVerticalAxis];
@@ -93,6 +94,16 @@
     [spec withColorForKey:@"Color" owner:self maintain:^(id owner, UIColor *flag) {
         [self.shapeView setBackgroundColor:flag ?: self.shapeView.backgroundColor];
     }];
+    
+    [spec withColorForKey:@"aColor" owner:self maintain:^(id owner, UIColor *flag) {
+        [self.view setBackgroundColor:flag ?: self.view.backgroundColor];
+    }];
+    
+    [spec withColorForKey:@"bColor" owner:self maintain:^(id owner, UIColor *flag) {
+        [self.shapeView.layer setBorderColor:[flag CGColor] ?: self.shapeView.layer.borderColor];
+    }];
+
+
 
 }
 

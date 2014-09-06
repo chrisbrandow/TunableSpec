@@ -317,7 +317,8 @@ typedef NS_ENUM(NSUInteger, KFSliderColorComponent) {
         NSLog(@"%s", __PRETTY_FUNCTION__);
         NSLog(@"json colorval %@",json[@"colorValue"]);
         NSMutableDictionary *newJSON = [NSMutableDictionary dictionaryWithDictionary:json];
-        newJSON[@"colorValue"] = colorWithHexString(json[@"colorValue"]);
+//        newJSON[@"colorValue"] = colorWithHexString(json[@"colorValue"]);
+        newJSON[@"colorValue"] = [self colorForString:json[@"colorValue"]];
         self = [super initWithJSONRepresentation:newJSON];
         self.sliderMaxValue = @(1);
         self.sliderMinValue = @(0);
@@ -330,13 +331,12 @@ typedef NS_ENUM(NSUInteger, KFSliderColorComponent) {
 
     if (longGR.state == UIGestureRecognizerStateBegan) {
         NSLog(@"began");
+        self.colorComponent += (self.colorComponent < 3) ? 1 : -3;
         [self updateSpecColor];
 
     }
 
 }
-
-
 
 - (CGFloat)currentSliderValue {
     
@@ -359,11 +359,9 @@ typedef NS_ENUM(NSUInteger, KFSliderColorComponent) {
 
 - (void)updateSpecColor {
     
-    self.colorComponent += (self.colorComponent < 3) ? 1 : -3;
-    
     NSLog(@"color component: %zd", self.colorComponent);
     
-    self.slider.value = self.currentSliderValue;
+    [[self slider] setValue:[self currentSliderValue]];
     
     switch (self.colorComponent) {
         case KFRed: {
@@ -388,22 +386,57 @@ typedef NS_ENUM(NSUInteger, KFSliderColorComponent) {
         }
     }
     
+    [[self.calloutView label] setText:[NSString stringWithFormat:@"%@: %.0f", self.colorStrings[self.colorComponent], 256*self.slider.value/self.slider.maximumValue]];
+    
 }
 
 - (UIColor *)colorForString:(NSString *)colorString {
-    
-    
-    UIColor *colorF = (colorString)colorWithHexString(colorString);
 
-    return colorF;
+    NSLog(@"color string %@", colorString);
+
+    return ([colorString rangeOfString:@","].location != NSNotFound) ? colorWithRGBString(colorString) : colorWithHexString(colorString);;
 }
 
 static BOOL stringIsEmpty(NSString *s) {
 	return s == nil || [s length] == 0;
 }
 
-static UIColor *colorWithHexString(NSString *hexString) {
+static UIColor *colorWithRGBString(NSString *rgbString) {
+    NSLog(@"%s", __PRETTY_FUNCTION__);
+
+    if (stringIsEmpty(rgbString)) {
+		return [UIColor blackColor];
+    }
+
+    NSScanner *scanner = [NSScanner scannerWithString:rgbString];
+    [scanner setCharactersToBeSkipped:[NSCharacterSet characterSetWithCharactersInString:@", "] ];
+    CGFloat r, g, b, a;
+    BOOL scanned;
+
+    scanned = [scanner scanFloat:&r];
+    scanned = [scanner scanFloat:&g];
+    scanned = [scanner scanFloat:&b];
+    if (![scanner scanFloat:&a]) { //if only three values entered, assume alpha = 1
+        a = 1;
+    }
     
+    a = (a > 1) ? 1 : a;
+    
+    if (r > 1|| g > 1 || b > 1) { //if any r,g,b > 1, assume scale = 255
+        r = r/255.0 ;
+        g = g/255.0 ;
+        b = b/255.0 ;
+        
+    }
+
+    
+    return [UIColor colorWithRed:r  green:g  blue:b alpha:a];
+    
+}
+
+static UIColor *colorWithHexString(NSString *hexString) {
+    NSLog(@"%s", __PRETTY_FUNCTION__);
+
 	/*Picky. Crashes by design.*/
 	
 	if (stringIsEmpty(hexString))
@@ -437,7 +470,7 @@ static UIColor *colorWithHexString(NSString *hexString) {
         [self setSlider:slider];
 
         [self updateSpecColor];
-        NSLog(@"self.default %@", [self defaultValue]);
+
         [slider setTranslatesAutoresizingMaskIntoConstraints:NO];
         [container addSubview:slider];
         [container addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"H:|-0-[slider]-0-|" options:0 metrics:nil views:views]];
@@ -448,7 +481,7 @@ static UIColor *colorWithHexString(NSString *hexString) {
 
         [slider setMinimumValue:[[self sliderMinValue] doubleValue]];
         [slider setMaximumValue:[[self sliderMaxValue] doubleValue]];
-//        [self withOwner:self maintain:^(id owner, id objValue) { [slider setValue:[objValue doubleValue]]; }];
+
         [self withOwner:self maintain:^(id owner, id objValue) { [slider setValue:self.currentSliderValue]; }];
         [slider addTarget:self action:@selector(takeSliderValue:) forControlEvents:UIControlEventValueChanged];
         
@@ -462,8 +495,8 @@ static UIColor *colorWithHexString(NSString *hexString) {
         UILongPressGestureRecognizer *longGR = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(changeColor:)];
         longGR.minimumPressDuration = .5;
         [slider addGestureRecognizer:longGR];
-//        [NSString stringWithFormat:@"%@: %.0f", self.colorString, 256*self.slider.value/self.slider.maximumValue];
-        [self withOwner:self maintain:^(id owner, id objValue) { [[callout label] setText:[NSString stringWithFormat:@"%@: %.0f", self.colorStrings[self.colorComponent], 256*self.slider.value/self.slider.maximumValue]]; }];
+
+        [self withOwner:self maintain:^(id owner, id objValue) { [[callout label] setText:[NSString stringWithFormat:@"%@: %.0f", self.colorStrings[self.colorComponent], 255*self.slider.value/self.slider.maximumValue]]; NSLog(@"maintain"); }];
         [slider addTarget:self action:@selector(showCallout:) forControlEvents:UIControlEventTouchDown];
         [slider addTarget:self action:@selector(updateCalloutXCenter:) forControlEvents:UIControlEventValueChanged];
         [slider addTarget:self action:@selector(hideCallout:) forControlEvents:UIControlEventTouchUpInside|UIControlEventTouchUpOutside|UIControlEventTouchCancel];
@@ -478,8 +511,6 @@ static UIColor *colorWithHexString(NSString *hexString) {
 
 - (void)takeSliderValue:(UISlider *)slider {
     NSLog(@"%s", __PRETTY_FUNCTION__);
-//    [self setColorValue:@([slider value])];
-//    [self setSliderValue:@([slider value])];
     
     CGColorRef color = [[self colorValue] CGColor];
     
@@ -503,46 +534,37 @@ static UIColor *colorWithHexString(NSString *hexString) {
     
 }
 
-- (id)sliderValue {
-    NSLog(@"%s", __PRETTY_FUNCTION__);
-    
-    return @([self currentSliderValue]);//[self objectValue];
-}
-
-- (void)setSliderValue:(id)sliderValue {
-    NSLog(@"%s %.2f", __PRETTY_FUNCTION__, [sliderValue floatValue]);
-    
-    CGColorRef color = [[self colorValue] CGColor];
-    
-    int numComponents = CGColorGetNumberOfComponents(color);
-    
-
-    if (numComponents == 4) {
-        const CGFloat *components = CGColorGetComponents(color);
-        
-        NSMutableArray *c = [NSMutableArray new];
-        for (int i = 0; i < 4; i++) {
-            c[i] = @(components[i]);
-        }
-        
-        CGFloat red = [sliderValue floatValue]/self.slider.maximumValue;
-        c[self.colorComponent] = @(red);
-        
-        [self setColorValue:[UIColor colorWithRed:[c[0] floatValue] green:[c[1] floatValue] blue:[c[2] floatValue] alpha:[c[3] floatValue]]];
-        NSLog(@"red: %.2f", red);
-    }
-    
-}
-
 //- (id)sliderValue {
-//    return [self objectValue];
-//}
-//
-//- (void)setSliderValue:(id)sliderValue {
 //    NSLog(@"%s", __PRETTY_FUNCTION__);
 //    
-//    [self setObjectValue:sliderValue];
+//    return @([self currentSliderValue]);//[self objectValue];
 //}
+
+//- (void)setSliderValue:(id)sliderValue {
+//    NSLog(@"%s %.2f", __PRETTY_FUNCTION__, [sliderValue floatValue]);
+//    
+//    CGColorRef color = [[self colorValue] CGColor];
+//    
+//    int numComponents = CGColorGetNumberOfComponents(color);
+//    
+//
+//    if (numComponents == 4) {
+//        const CGFloat *components = CGColorGetComponents(color);
+//        
+//        NSMutableArray *c = [NSMutableArray new];
+//        for (int i = 0; i < 4; i++) {
+//            c[i] = @(components[i]);
+//        }
+//        
+//        CGFloat red = [sliderValue floatValue]/self.slider.maximumValue;
+//        c[self.colorComponent] = @(red);
+//        
+//        [self setColorValue:[UIColor colorWithRed:[c[0] floatValue] green:[c[1] floatValue] blue:[c[2] floatValue] alpha:[c[3] floatValue]]];
+//        NSLog(@"red: %.2f", red);
+//    }
+//    
+//}
+
 -(id)colorValue {
     
     return [self objectValue];
@@ -587,7 +609,7 @@ static UIColor *colorWithHexString(NSString *hexString) {
     CGRect thumbRect = [[self container] convertRect:thumbRectSliderSpace fromView:slider];
 
     [[self calloutXCenter] setConstant:thumbRect.origin.x + thumbRect.size.width/2];
-//    self.calloutView.label.text = [NSString stringWithFormat:@"%@: %.0f", self.colorString, 256*self.slider.value/self.slider.maximumValue];
+    
 }
 
 @end
