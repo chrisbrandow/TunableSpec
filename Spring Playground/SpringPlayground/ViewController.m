@@ -65,14 +65,16 @@
 #else 
     [[self label] setText:@"Spec tuning UI is only installed in Debug configuration. Please run Debug!\n\n Search for HONK in ViewController.m to see how this is done."];
 #endif
-
+    
     
     [[[self shapeView] layer] setShadowOpacity:1];
     [[[self shapeView] layer] setShadowOffset:CGSizeMake(0,0)];
-    
+    [[[self shapeView] layer] setBorderWidth:3];
+
     UIInterpolatingMotionEffect *xMotionEffect = [[UIInterpolatingMotionEffect alloc] initWithKeyPath:@"layer.shadowOffset.width" type:UIInterpolatingMotionEffectTypeTiltAlongHorizontalAxis];
     UIInterpolatingMotionEffect *yMotionEffect = [[UIInterpolatingMotionEffect alloc] initWithKeyPath:@"layer.shadowOffset.height" type:UIInterpolatingMotionEffectTypeTiltAlongVerticalAxis];
     [spec withDoubleForKey:@"Depth" owner:self maintain:^(id owner, double doubleValue) {
+
         [xMotionEffect setMinimumRelativeValue:@(-doubleValue)];
         [xMotionEffect setMaximumRelativeValue:@(doubleValue)];
         [yMotionEffect setMinimumRelativeValue:@(-doubleValue)];
@@ -87,6 +89,22 @@
     }];
     
     [[[self shapeView] layer] setCornerRadius:[[self shapeView] bounds].size.width/2];
+
+    
+    [spec withColorForKey:@"Color" owner:self maintain:^(id owner, UIColor *flag) {
+        [self.shapeView setBackgroundColor:flag ?: self.shapeView.backgroundColor];
+    }];
+    
+    [spec withColorForKey:@"aColor" owner:self maintain:^(id owner, UIColor *flag) {
+        [self.view setBackgroundColor:flag ?: self.view.backgroundColor];
+    }];
+    
+    [spec withColorForKey:@"bColor" owner:self maintain:^(id owner, UIColor *flag) {
+        [self.shapeView.layer setBorderColor:[flag CGColor] ?: self.shapeView.layer.borderColor];
+    }];
+
+
+
 }
 
 - (IBAction)handlePan:(UIPanGestureRecognizer *)reco {

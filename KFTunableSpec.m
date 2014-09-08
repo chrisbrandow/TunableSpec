@@ -35,10 +35,12 @@ static UIImage *CalloutArrowImage();
 @implementation _KFSpecItem
 
 + (NSArray *)propertiesForJSONRepresentation {
+
     return @[@"key", @"label"];
 }
 
 - (id)initWithJSONRepresentation:(NSDictionary *)json {
+
     if (json[@"key"] == nil) return nil;
     
     self = [super init];
@@ -46,8 +48,9 @@ static UIImage *CalloutArrowImage();
         for (NSString *prop in [[self class] propertiesForJSONRepresentation]) {
             [self setValue:json[prop] forKey:prop];
         }
-        
+
         [self setDefaultValue:[self objectValue]];
+
         _maintenanceBlocksByOwner = [NSMapTable weakToStrongObjectsMapTable];
     }
     return self;
@@ -74,6 +77,7 @@ static UIImage *CalloutArrowImage();
 }
 
 - (void)setObjectValue:(id)objectValue {
+
     if (![_objectValue isEqual:objectValue]) {
         _objectValue = objectValue;
         objectValue = [self objectValue];
@@ -225,6 +229,7 @@ static NSString *CamelCaseToSpaces(NSString *camelCaseString) {
 }
 
 - (void)setSliderValue:(id)sliderValue {
+
     [self setObjectValue:sliderValue];
 }
 
@@ -237,12 +242,14 @@ static NSString *CamelCaseToSpaces(NSString *camelCaseString) {
 }
 
 - (void)showCallout:(id)sender {
+    
     [UIView animateWithDuration:0.15 animations:^{
         [[self calloutView] setAlpha:1.0];
     }];
 }
 
 - (void)hideCallout:(id)sender {
+
     [UIView animateWithDuration:0.15 animations:^{
         [[self calloutView] setAlpha:0.0];
     }];
@@ -254,6 +261,362 @@ static NSString *CamelCaseToSpaces(NSString *camelCaseString) {
     CGRect thumbRectSliderSpace = [slider thumbRectForBounds:bounds trackRect:[slider trackRectForBounds:bounds] value:[slider value]];
     CGRect thumbRect = [[self container] convertRect:thumbRectSliderSpace fromView:slider];
     [[self calloutXCenter] setConstant:thumbRect.origin.x + thumbRect.size.width/2];
+}
+
+@end
+
+typedef NS_ENUM(NSUInteger, KFSliderColorComponent) {
+    KFRed,
+    KFGreen,
+    KFBlue,
+    KFAlpha
+};
+
+@interface _KFColorSilderSpecItem : _KFSpecItem <UIGestureRecognizerDelegate>
+
+@property (nonatomic) NSNumber *sliderMinValue;
+@property (nonatomic) NSNumber *sliderMaxValue;
+@property UIView *container;
+@property UISlider *slider;
+@property _KFCalloutView *calloutView;
+@property NSLayoutConstraint *calloutXCenter;
+@property (nonatomic) NSArray *colorStrings;
+@property (nonatomic) KFSliderColorComponent colorComponent;
+
+
+@end
+
+@implementation _KFColorSilderSpecItem
+//set up following:
+//init with Hex, rgb (0-255 or 0-1) and alpha
+//update objectValue
+//update description to output hex, or uicolor strings
++ (NSArray *)propertiesForJSONRepresentation {
+    /*only accepts colorValue as an input. rgb values are fixed between 0-255*/
+    static NSArray *sProps;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        sProps = [[super propertiesForJSONRepresentation] arrayByAddingObjectsFromArray:@[@"colorValue"]];
+    });
+
+    return sProps;
+}
+
+- (id)initWithJSONRepresentation:(NSDictionary *)json {
+
+    if (json[@"colorValue"] == nil) {
+        return nil;
+    } else {
+
+        NSMutableDictionary *newJSON = [NSMutableDictionary dictionaryWithDictionary:json];
+
+        newJSON[@"colorValue"] = [self colorForString:json[@"colorValue"]];
+        self = [super initWithJSONRepresentation:newJSON];
+        return self;
+    }
+}
+
+- (NSDictionary *)jsonRepresentation {
+    /*required because uicolor is not a valid json object*/
+    
+    NSMutableDictionary *dict = [NSMutableDictionary dictionary];
+    
+    for (NSString *prop in [[self class] propertiesForJSONRepresentation]) {
+        
+        [dict setObject:[self valueForKey:prop] forKey:prop];
+        id obj = [self valueForKey:prop];
+
+        if ([obj isKindOfClass:[UIColor class]]) {
+            dict[prop] = [self stringsFromColor:obj];
+        }
+    }
+    
+    return dict;
+}
+
+- (UIView *)tuningView {
+    if (![self container]) {
+        self.colorStrings = @[@"Red", @"Green", @"Blue", @"Alpha"];
+        UIView *container = [[UIView alloc] init];
+        UISlider *slider = [[UISlider alloc] init];
+        _KFCalloutView *callout = [[_KFCalloutView alloc] init];
+        NSDictionary *views = NSDictionaryOfVariableBindings(slider, callout);
+
+        [self setSlider:slider];
+        [self updateSpecTintColor];
+
+        [slider setTranslatesAutoresizingMaskIntoConstraints:NO];
+        [container addSubview:slider];
+        [container addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"H:|-0-[slider]-0-|" options:0 metrics:nil views:views]];
+        [container addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"V:|-0-[slider]-0-|" options:0 metrics:nil views:views]];
+        [slider addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"[slider(>=300@720)]" options:0 metrics:nil views:views]];
+        [slider addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"V:[slider(>=25@750)]" options:0 metrics:nil views:views]];
+
+        [slider setMinimumValue:[[self sliderMinValue] doubleValue]];
+        [slider setMaximumValue:[[self sliderMaxValue] doubleValue]];
+        [self withOwner:self maintain:^(id owner, id objValue) { [slider setValue:[self valueForSlider]]; }];
+        [slider addTarget:self action:@selector(takeSliderValue:) forControlEvents:UIControlEventValueChanged];
+        
+        [callout setTranslatesAutoresizingMaskIntoConstraints:NO];
+        [container addSubview:callout];
+        [container addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"V:[callout]-3-[slider]" options:0 metrics:nil views:views]];
+        [self setCalloutXCenter:[NSLayoutConstraint constraintWithItem:callout attribute:NSLayoutAttributeCenterX relatedBy:NSLayoutRelationEqual toItem:container attribute:NSLayoutAttributeLeft multiplier:1 constant:0]];
+        [container addConstraint:[self calloutXCenter]];
+        [callout setAlpha:0];
+
+        UILongPressGestureRecognizer *longGR = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(changeColorComponent:)];
+        longGR.numberOfTouchesRequired = 1;
+        longGR.minimumPressDuration = .5;
+        [slider addGestureRecognizer:longGR];
+        longGR.delegate = self;
+
+        [self withOwner:self maintain:^(id owner, id objValue) { [[callout label] setText:[self stringForCalloutView]];
+        }];
+        [slider addTarget:self action:@selector(showCallout:) forControlEvents:UIControlEventTouchDown];
+        [slider addTarget:self action:@selector(updateCalloutXCenter:) forControlEvents:UIControlEventValueChanged];
+        [slider addTarget:self action:@selector(hideCallout:) forControlEvents:UIControlEventTouchUpInside|UIControlEventTouchUpOutside|UIControlEventTouchCancel];
+        
+        [self setCalloutView:callout];
+        [self setContainer:container];
+    }
+    return [self container];
+}
+
+- (void)takeSliderValue:(UISlider *)slider {
+    
+    
+    CGColorRef color = [[self colorValue] CGColor];
+
+    int numComponents = CGColorGetNumberOfComponents(color);
+    
+    if (numComponents != 4) {
+        return;
+    }
+    
+    const CGFloat *components = CGColorGetComponents(color);
+
+    NSMutableArray *c = [NSMutableArray new];
+    
+    for (int i = 0; i < 4; i++) {
+        c[i] = (i == self.colorComponent) ? @([slider value]/[slider maximumValue]) : @(components[i]);
+    }
+    
+    [self setColorValue:[UIColor colorWithRed:[c[0] floatValue] green:[c[1] floatValue] blue:[c[2] floatValue] alpha:[c[3] floatValue]]];
+    
+}
+
+- (id)colorValue {
+    
+    return [self objectValue];
+}
+
+- (void)setColorValue:(UIColor *)color {
+    
+    [self setObjectValue:color];
+    
+}
+
+- (CGFloat)valueForSlider {
+    
+    
+    CGColorRef color = [[self colorValue] CGColor];
+    
+    NSUInteger numComponents = CGColorGetNumberOfComponents(color);
+    
+    if (numComponents == 4) {
+        const CGFloat *components = CGColorGetComponents(color);
+        CGFloat currentComponentValue = components[self.colorComponent];
+        return currentComponentValue;
+        
+    }
+    
+    return 0;
+}
+
+- (NSNumber *)sliderMinValue {
+    return _sliderMinValue ?: @0;
+}
+
+- (NSNumber *)sliderMaxValue {
+    return _sliderMaxValue ?: @(1);
+}
+
+- (void)showCallout:(id)sender {
+
+    [UIView animateWithDuration:0.15 animations:^{
+        [[self calloutView] setAlpha:1.0];
+    }];
+}
+
+- (void)hideCallout:(id)sender {
+    [UIView animateWithDuration:0.15 animations:^{
+        [[self calloutView] setAlpha:0.0];
+
+    }];
+    
+}
+
+- (void)updateCalloutXCenter:(id)sender {
+
+    UISlider *slider = [self slider];
+    CGRect bounds = [slider bounds];
+    CGRect thumbRectSliderSpace = [slider thumbRectForBounds:bounds trackRect:[slider trackRectForBounds:bounds] value:[slider value]];
+    CGRect thumbRect = [[self container] convertRect:thumbRectSliderSpace fromView:slider];
+
+    [[self calloutXCenter] setConstant:thumbRect.origin.x + thumbRect.size.width/2];
+    
+}
+
+- (NSString *)stringForCalloutView {
+    
+    return [NSString stringWithFormat:@"%@: %.0f", self.colorStrings[self.colorComponent], 255*self.slider.value/self.slider.maximumValue];
+}
+
+#pragma mark longPressGestureRecognizer, helper & delegate methods
+
+- (void)changeColorComponent:(UILongPressGestureRecognizer *)longGR {
+
+    if (longGR.state == UIGestureRecognizerStateBegan) {
+        
+        self.colorComponent += (self.colorComponent < 3) ? 1 : -3;
+        [self hideCallout:longGR];
+        [self updateSpecTintColor];
+        
+    } else if (longGR.state == UIGestureRecognizerStateEnded) {
+        [[[self calloutView] label] setText:[self stringForCalloutView]];
+        [self updateCalloutXCenter:longGR];
+    }
+    
+}
+
+- (void)updateSpecTintColor {
+    
+    [[self slider] setValue:[self valueForSlider]];
+    
+    switch (self.colorComponent) {
+        case KFRed: {
+            self.slider.tintColor = [UIColor redColor];
+            break;
+        }
+        case KFGreen: {
+            self.slider.tintColor = [UIColor greenColor];
+            break;
+        }
+        case KFBlue: {
+            self.slider.tintColor = [UIColor blueColor];
+            break;
+        }
+        case KFAlpha: {
+            self.slider.tintColor = [UIColor whiteColor];
+            break;
+        }
+        default: {
+            self.slider.tintColor = [UIColor redColor];
+            break;
+        }
+    }
+    
+}
+
+-(BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldReceiveTouch:(UITouch *)touch {
+    
+    UISlider *slider = [self slider];
+    CGRect bounds = [slider bounds];
+    CGRect thumbRectSliderSpace = [slider thumbRectForBounds:bounds trackRect:[slider trackRectForBounds:bounds] value:[slider value]];
+    CGRect thumbRect = [[self container] convertRect:thumbRectSliderSpace fromView:slider];
+    
+    return !CGRectContainsPoint(thumbRect, [touch locationInView:self.slider]);
+}
+
+#pragma mark color <--> string methods
+
+- (NSArray *)stringsFromColor:(UIColor *)colorValue {
+    /*implemented for easiest copying and pasting*/
+    
+    CGColorRef color = [colorValue CGColor];
+    
+    NSUInteger numComponents = CGColorGetNumberOfComponents(color);
+    
+    if (numComponents == 4) {
+        const CGFloat *c = CGColorGetComponents(color);
+        
+        NSString *hexString = [NSString stringWithFormat:@"#%.2lX%.2lX%.2lX, Alpha: %.3f", lround(255*c[0]), lround(255*c[1]), lround(255*c[2]), c[3]];
+        
+        NSString *rgbRawString = [NSString stringWithFormat:@"%3zd, %3zd %3zd, Alpha: %.3f", lround(255*c[0]), lround(255*c[1]), lround(255*c[2]), c[3]]; //255
+        NSString *rgbDecimalString = [NSString stringWithFormat:@"%.3f, %.3f, %.3f, Alpha: %.3f", c[0], c[1], c[2], c[3]];  //.3
+        NSString *UIColorString = [NSString stringWithFormat:@"[UIColor colorWithRed:%.3f green:%.3f blue:%.3f alpha:%.3f]", c[0], c[1], c[2], c[3]]; //colorWith
+        
+        return @[hexString, rgbRawString, rgbDecimalString, UIColorString];
+        
+    }
+    return nil;
+    
+}
+
+- (UIColor *)colorForString:(NSString *)colorString {
+    /*flexible for RGB or hexString input*/
+    return ([colorString rangeOfString:@","].location != NSNotFound) ? colorWithRGBString(colorString) : colorWithHexString(colorString);;
+}
+
+static BOOL stringIsEmpty(NSString *s) {
+	return s == nil || [s length] == 0;
+}
+
+static UIColor *colorWithRGBString(NSString *rgbString) {
+    
+    
+    if (stringIsEmpty(rgbString)) {
+		return [UIColor blackColor];
+    }
+    
+    NSScanner *scanner = [NSScanner scannerWithString:rgbString];
+    [scanner setCharactersToBeSkipped:[NSCharacterSet characterSetWithCharactersInString:@", "] ];
+    float r, g, b, a;
+    BOOL scanned;
+    
+    scanned = [scanner scanFloat:&r];
+    scanned = [scanner scanFloat:&g];
+    scanned = [scanner scanFloat:&b];
+    if (![scanner scanFloat:&a]) { //if only three values entered, assume alpha = 1
+        a = 1;
+    }
+    
+    a = (a > 1) ? 1 : a;
+    
+    if (r > 1|| g > 1 || b > 1) { //if any r,g,b > 1, assume scale = 255
+        r = r/255.0 ;
+        g = g/255.0 ;
+        b = b/255.0 ;
+        
+    }
+    
+    
+    return [UIColor colorWithRed:r  green:g  blue:b alpha:a];
+    
+}
+
+static UIColor *colorWithHexString(NSString *hexString) {
+    
+	/*Picky. Crashes by design.*/
+	/*borrowed directly from Brent Simmons VSTheme work*/
+	if (stringIsEmpty(hexString))
+		return [UIColor blackColor];
+    
+	NSMutableString *s = [hexString mutableCopy];
+	[s replaceOccurrencesOfString:@"#" withString:@"" options:0 range:NSMakeRange(0, [hexString length])];
+	CFStringTrimWhitespace((__bridge CFMutableStringRef)s);
+    
+	NSString *redString = [s substringToIndex:2];
+	NSString *greenString = [s substringWithRange:NSMakeRange(2, 2)];
+	NSString *blueString = [s substringWithRange:NSMakeRange(4, 2)];
+    
+	unsigned int red = 0, green = 0, blue = 0;
+	[[NSScanner scannerWithString:redString] scanHexInt:&red];
+	[[NSScanner scannerWithString:greenString] scanHexInt:&green];
+	[[NSScanner scannerWithString:blueString] scanHexInt:&blue];
+    
+    
+	return [UIColor colorWithRed:(float)red/255.0f green:(float)green/255.0f blue:(float)blue/255.0f alpha:1.0f];
 }
 
 @end
@@ -335,6 +698,7 @@ static NSString *CamelCaseToSpaces(NSString *camelCaseString) {
 @property NSLayoutConstraint *controlsYConstraint;
 
 @property UIDocumentInteractionController *interactionController; // interaction controller doesn't keep itself alive during presentation. lame.
+
 @end
 
 @implementation KFTunableSpec
@@ -366,11 +730,13 @@ static NSMutableDictionary *sSpecsByName;
         
         NSData *jsonData = [NSData dataWithContentsOfURL:jsonURL];
         NSError *error = nil;
+        
         NSArray *specItemReps = [NSJSONSerialization JSONObjectWithData:jsonData options:0 error:&error];
         NSAssert(specItemReps != nil, @"error decoding %@.json: %@", name, error);
 
         for (NSDictionary *rep in specItemReps) {
             _KFSpecItem *specItem = nil;
+            specItem = specItem ?: [[_KFColorSilderSpecItem alloc] initWithJSONRepresentation:rep];
             specItem = specItem ?: [[_KFSilderSpecItem alloc] initWithJSONRepresentation:rep];
             specItem = specItem ?: [[_KFSwitchSpecItem alloc] initWithJSONRepresentation:rep];
             
@@ -403,8 +769,14 @@ static NSMutableDictionary *sSpecsByName;
     return [[[self _KFSpecItemForKey:key] objectValue] doubleValue];
 }
 
+- (UIColor *)colorForKey:(NSString *)key {
+    return [[self _KFSpecItemForKey:key] objectValue] ;
+}
+
+
 - (void)withDoubleForKey:(NSString *)key owner:(id)weaklyHeldOwner maintain:(void (^)(id owner, double doubleValue))maintenanceBlock {
     [[self _KFSpecItemForKey:key] withOwner:weaklyHeldOwner maintain:^(id owner, id objectValue){
+        
         maintenanceBlock(owner, [objectValue doubleValue]);
     }];
 }
@@ -419,6 +791,11 @@ static NSMutableDictionary *sSpecsByName;
     }];
 }
 
+- (void)withColorForKey:(NSString *)key owner:(id)weaklyHeldOwner maintain:(void (^)(id owner, UIColor *flag))maintenanceBlock {
+    [[self _KFSpecItemForKey:key] withOwner:weaklyHeldOwner maintain:^(id owner, id objectValue){
+        maintenanceBlock(owner, objectValue);
+    }];
+}
 
 - (UIViewController *)makeViewController {
     UIView *mainView = [[UIView alloc] init];
@@ -634,7 +1011,6 @@ static NSMutableDictionary *sSpecsByName;
 - (void)log {
     NSData *jsonData = [NSJSONSerialization dataWithJSONObject:[self jsonRepresentation] options:NSJSONWritingPrettyPrinted error:NULL];
     NSString *jsonString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
-    NSLog(@"\n%@", jsonString);
 }
 
 - (void)save {

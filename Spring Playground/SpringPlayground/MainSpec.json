@@ -1,10 +1,23 @@
 [
   {
-    "sliderMaxValue" : 2,
-    "key" : "SpringDuration",
-    "label" : "Duration",
-    "sliderValue" : 0.5756578999999999,
-    "sliderMinValue" : 0
+  "colorValue" : "0.07, 0.47, 0.84, 1",
+  "key" : "aColor",
+  "label" : "viewBG"
+  },  {
+  "colorValue" : "45, 124, 100",
+  "key" : "Color",
+  "label" : "shapeBG"
+  },  {
+  "colorValue" : "#39CCCC",
+  "key" : "bColor",
+  "label" : "shapeBorder"
+  },
+  {
+  "sliderMaxValue" : 2,
+  "key" : "SpringDuration",
+  "label" : "Duration",
+  "sliderValue" : 0.5756578999999999,
+  "sliderMinValue" : 0
   },
   {
     "sliderMaxValue" : 1,
