@@ -65,7 +65,7 @@
 #else 
     [[self label] setText:@"Spec tuning UI is only installed in Debug configuration. Please run Debug!\n\n Search for HONK in ViewController.m to see how this is done."];
 #endif
-
+    
     
     [[[self shapeView] layer] setShadowOpacity:1];
     [[[self shapeView] layer] setShadowOffset:CGSizeMake(0,0)];

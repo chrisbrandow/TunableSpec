@@ -308,6 +308,7 @@ typedef NS_ENUM(NSUInteger, KFSliderColorComponent) {
     dispatch_once(&onceToken, ^{
         sProps = [[super propertiesForJSONRepresentation] arrayByAddingObjectsFromArray:@[@"colorValue"]];
     });
+
     return sProps;
 }
 
@@ -321,12 +322,53 @@ typedef NS_ENUM(NSUInteger, KFSliderColorComponent) {
 
         newJSON[@"colorValue"] = [self colorForString:json[@"colorValue"]];
         self = [super initWithJSONRepresentation:newJSON];
-        self.sliderMaxValue = @(1);
-        self.sliderMinValue = @(0);
+        [self setSliderMaxValue:@(1)];
+        [self setSliderMinValue:@(0)];
         return self;
     }
 }
 
+- (NSDictionary *)jsonRepresentation {
+    
+    NSMutableDictionary *dict = [NSMutableDictionary dictionary];
+    
+    for (NSString *prop in [[self class] propertiesForJSONRepresentation]) {
+        
+        [dict setObject:[self valueForKey:prop] forKey:prop];
+        id obj = [self valueForKey:prop];
+
+        if ([obj isKindOfClass:[UIColor class]]) {
+            dict[prop] = [self stringsFromColor:obj];
+        }
+    }
+    
+    return dict;
+}
+
+- (NSArray *)stringsFromColor:(UIColor *)colorValue {
+    
+    
+    CGColorRef color = [colorValue CGColor];
+    
+    NSUInteger numComponents = CGColorGetNumberOfComponents(color);
+    
+    if (numComponents == 4) {
+        const CGFloat *components = CGColorGetComponents(color);
+
+        NSString *hexString = [NSString stringWithFormat:@"#%.2lX%.2lX%.2lX, Alpha: %.3f", lround(255*components[0]), lround(255*components[1]), lround(255*components[2]), components[3]];
+        NSLog(@"string: %@", hexString);
+        
+        
+        NSString *rgbRawString = [NSString stringWithFormat:@"%.3zd, %.3zd %.3zd, Alpha: %.3f", lround(255*components[0]), lround(255*components[1]), lround(255*components[2]), components[3]]; //255
+        NSString *rgbDecimalString = [NSString stringWithFormat:@"%.3f, %.3f, %.3f, Alpha: %.3f", components[0], components[1], components[2], components[3]];  //.3
+        NSString *UIColorString = [NSString stringWithFormat:@"[UIColor colorWithRed:%.3f green:%.3f blue:%.3f alpha:%.3f]", components[0], components[1], components[2], components[3]]; //colorWith
+        
+        return @[hexString, rgbRawString, rgbDecimalString, UIColorString];
+
+    }
+    return nil;
+
+}
 - (void)changeColor:(UILongPressGestureRecognizer *)longGR {
     NSLog(@"%s", __PRETTY_FUNCTION__);
 
@@ -336,9 +378,8 @@ typedef NS_ENUM(NSUInteger, KFSliderColorComponent) {
         [self updateSpecColor];
 
     } else {
-        [[self.calloutView label] setText:[NSString stringWithFormat:@"%@: %.0f", self.colorStrings[self.colorComponent], 255*self.slider.value/self.slider.maximumValue]];
+        [[[self calloutView] label] setText:[NSString stringWithFormat:@"%@: %.0f", self.colorStrings[self.colorComponent], 255*self.slider.value/self.slider.maximumValue]];
         [self updateCalloutXCenter:longGR];
-        [self showCallout:longGR];
     }
 
 }
@@ -349,7 +390,7 @@ typedef NS_ENUM(NSUInteger, KFSliderColorComponent) {
 
     CGColorRef color = [[self colorValue] CGColor];
     
-    int numComponents = CGColorGetNumberOfComponents(color);
+    NSUInteger numComponents = CGColorGetNumberOfComponents(color);
     
     if (numComponents == 4) {
         const CGFloat *components = CGColorGetComponents(color);
@@ -388,8 +429,6 @@ typedef NS_ENUM(NSUInteger, KFSliderColorComponent) {
         }
     }
     
-//    [[self.calloutView label] setText:[NSString stringWithFormat:@"%@: %.0f", self.colorStrings[self.colorComponent], 255*self.slider.value/self.slider.maximumValue]];
-    
 }
 
 - (UIColor *)colorForString:(NSString *)colorString {
@@ -404,13 +443,14 @@ static BOOL stringIsEmpty(NSString *s) {
 static UIColor *colorWithRGBString(NSString *rgbString) {
     NSLog(@"%s", __PRETTY_FUNCTION__);
 
+    
     if (stringIsEmpty(rgbString)) {
 		return [UIColor blackColor];
     }
 
     NSScanner *scanner = [NSScanner scannerWithString:rgbString];
     [scanner setCharactersToBeSkipped:[NSCharacterSet characterSetWithCharactersInString:@", "] ];
-    CGFloat r, g, b, a;
+    float r, g, b, a;
     BOOL scanned;
 
     scanned = [scanner scanFloat:&r];
@@ -438,7 +478,7 @@ static UIColor *colorWithHexString(NSString *hexString) {
     NSLog(@"%s", __PRETTY_FUNCTION__);
 
 	/*Picky. Crashes by design.*/
-	
+	/*borrowed directly from Brent Simmons VSTheme work*/
 	if (stringIsEmpty(hexString))
 		return [UIColor blackColor];
     
@@ -456,7 +496,7 @@ static UIColor *colorWithHexString(NSString *hexString) {
 	[[NSScanner scannerWithString:blueString] scanHexInt:&blue];
     
     
-	return [UIColor colorWithRed:(CGFloat)red/255.0f green:(CGFloat)green/255.0f blue:(CGFloat)blue/255.0f alpha:1.0f];
+	return [UIColor colorWithRed:(float)red/255.0f green:(float)green/255.0f blue:(float)blue/255.0f alpha:1.0f];
 }
 
 - (UIView *)tuningView {
