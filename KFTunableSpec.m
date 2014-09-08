@@ -792,7 +792,7 @@ static NSMutableDictionary *sSpecsByName;
 }
 
 - (void)withColorForKey:(NSString *)key owner:(id)weaklyHeldOwner maintain:(void (^)(id owner, UIColor *flag))maintenanceBlock {
-    [[self _KFSpecItemForKey:key] withOwner:weaklyHeldOwner maintain:^(id owner, id objectValue){
+    [[self _KFSpecItemForKey:key] withOwner:weaklyHeldOwner maintain:^(id owner, id objectValue) {
         maintenanceBlock(owner, objectValue);
     }];
 }
@@ -1011,6 +1011,8 @@ static NSMutableDictionary *sSpecsByName;
 - (void)log {
     NSData *jsonData = [NSJSONSerialization dataWithJSONObject:[self jsonRepresentation] options:NSJSONWritingPrettyPrinted error:NULL];
     NSString *jsonString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
+    NSLog(@"\n%@", jsonString);
+    
 }
 
 - (void)save {
