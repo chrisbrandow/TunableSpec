@@ -61,6 +61,44 @@ Sample JSON:
 
 */
 
+/* Chris Brandow Notes 2014-09-08
+ 
+    Color values can tuned with a slider one component at a time. The user switches between components by long-pressing on the slider.
+
+    Color sliders can be initiated from JSON with either a comma-delimited list of 0-1 or 0-255 rgb values, or with a hex string.
+
+    Output is an array of 4 strings, to ease possible copying and pasting into other development tools.
+ 
+    examples for color slider
+
+ {
+     "colorValue" : "0.58, 0., 0.28, 1",
+     "key" : "aColor",
+     "label" : "viewBack"
+ },  {
+     "colorValue" : "45, 124, 100",
+     "key" : "Color",
+     "label" : "shapeBack"
+ },  {
+     "colorValue" : "#39CCCC",
+     "key" : "bColor",
+     "label" : "shapeBorder"
+ }
+ 
+    sample output:
+ {
+     "key" : "Color",
+     "label" : "shapeBack",
+     "colorValue" : [
+     "#717C64, Alpha: 1.000",
+     "113, 124 100, Alpha: 1.000",
+     "0.444, 0.486, 0.392, Alpha: 1.000",
+     "[UIColor colorWithRed:0.444 green:0.486 blue:0.392 alpha:1.000]"
+     ]
+ },
+ 
+ */
+
 #import <UIKit/UIKit.h>
 
 

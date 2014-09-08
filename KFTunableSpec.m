@@ -242,7 +242,7 @@ static NSString *CamelCaseToSpaces(NSString *camelCaseString) {
 }
 
 - (void)showCallout:(id)sender {
-
+    
     [UIView animateWithDuration:0.15 animations:^{
         [[self calloutView] setAlpha:1.0];
     }];
@@ -272,7 +272,7 @@ typedef NS_ENUM(NSUInteger, KFSliderColorComponent) {
     KFAlpha
 };
 
-@interface _KFColorSilderSpecItem : _KFSpecItem
+@interface _KFColorSilderSpecItem : _KFSpecItem <UIGestureRecognizerDelegate>
 
 @property (nonatomic) NSNumber *sliderMinValue;
 @property (nonatomic) NSNumber *sliderMaxValue;
@@ -368,6 +368,7 @@ typedef NS_ENUM(NSUInteger, KFSliderColorComponent) {
         longGR.numberOfTouchesRequired = 1;
         longGR.minimumPressDuration = .5;
         [slider addGestureRecognizer:longGR];
+        longGR.delegate = self;
 
         [self withOwner:self maintain:^(id owner, id objValue) { [[callout label] setText:[self stringForCalloutView]];
         }];
@@ -441,7 +442,7 @@ typedef NS_ENUM(NSUInteger, KFSliderColorComponent) {
 }
 
 - (void)showCallout:(id)sender {
-    
+
     [UIView animateWithDuration:0.15 animations:^{
         [[self calloutView] setAlpha:1.0];
     }];
@@ -471,16 +472,17 @@ typedef NS_ENUM(NSUInteger, KFSliderColorComponent) {
     return [NSString stringWithFormat:@"%@: %.0f", self.colorStrings[self.colorComponent], 255*self.slider.value/self.slider.maximumValue];
 }
 
-#pragma mark longPressGestureRecognizer & helper methods
+#pragma mark longPressGestureRecognizer, helper & delegate methods
 
 - (void)changeColorComponent:(UILongPressGestureRecognizer *)longGR {
-    
+
     if (longGR.state == UIGestureRecognizerStateBegan) {
+        
         self.colorComponent += (self.colorComponent < 3) ? 1 : -3;
         [self hideCallout:longGR];
         [self updateSpecTintColor];
         
-    } else {
+    } else if (longGR.state == UIGestureRecognizerStateEnded) {
         [[[self calloutView] label] setText:[self stringForCalloutView]];
         [self updateCalloutXCenter:longGR];
     }
@@ -516,6 +518,16 @@ typedef NS_ENUM(NSUInteger, KFSliderColorComponent) {
     
 }
 
+-(BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldReceiveTouch:(UITouch *)touch {
+    
+    UISlider *slider = [self slider];
+    CGRect bounds = [slider bounds];
+    CGRect thumbRectSliderSpace = [slider thumbRectForBounds:bounds trackRect:[slider trackRectForBounds:bounds] value:[slider value]];
+    CGRect thumbRect = [[self container] convertRect:thumbRectSliderSpace fromView:slider];
+    
+    return !CGRectContainsPoint(thumbRect, [touch locationInView:self.slider]);
+}
+
 #pragma mark color <--> string methods
 
 - (NSArray *)stringsFromColor:(UIColor *)colorValue {
@@ -526,14 +538,13 @@ typedef NS_ENUM(NSUInteger, KFSliderColorComponent) {
     NSUInteger numComponents = CGColorGetNumberOfComponents(color);
     
     if (numComponents == 4) {
-        const CGFloat *components = CGColorGetComponents(color);
+        const CGFloat *c = CGColorGetComponents(color);
         
-        NSString *hexString = [NSString stringWithFormat:@"#%.2lX%.2lX%.2lX, Alpha: %.3f", lround(255*components[0]), lround(255*components[1]), lround(255*components[2]), components[3]];
+        NSString *hexString = [NSString stringWithFormat:@"#%.2lX%.2lX%.2lX, Alpha: %.3f", lround(255*c[0]), lround(255*c[1]), lround(255*c[2]), c[3]];
         
-        
-        NSString *rgbRawString = [NSString stringWithFormat:@"%3zd, %3zd %3zd, Alpha: %.3f", lround(255*components[0]), lround(255*components[1]), lround(255*components[2]), components[3]]; //255
-        NSString *rgbDecimalString = [NSString stringWithFormat:@"%.3f, %.3f, %.3f, Alpha: %.3f", components[0], components[1], components[2], components[3]];  //.3
-        NSString *UIColorString = [NSString stringWithFormat:@"[UIColor colorWithRed:%.3f green:%.3f blue:%.3f alpha:%.3f]", components[0], components[1], components[2], components[3]]; //colorWith
+        NSString *rgbRawString = [NSString stringWithFormat:@"%3zd, %3zd %3zd, Alpha: %.3f", lround(255*c[0]), lround(255*c[1]), lround(255*c[2]), c[3]]; //255
+        NSString *rgbDecimalString = [NSString stringWithFormat:@"%.3f, %.3f, %.3f, Alpha: %.3f", c[0], c[1], c[2], c[3]];  //.3
+        NSString *UIColorString = [NSString stringWithFormat:@"[UIColor colorWithRed:%.3f green:%.3f blue:%.3f alpha:%.3f]", c[0], c[1], c[2], c[3]]; //colorWith
         
         return @[hexString, rgbRawString, rgbDecimalString, UIColorString];
         
@@ -543,7 +554,7 @@ typedef NS_ENUM(NSUInteger, KFSliderColorComponent) {
 }
 
 - (UIColor *)colorForString:(NSString *)colorString {
-    
+    /*flexible for RGB or hexString input*/
     return ([colorString rangeOfString:@","].location != NSNotFound) ? colorWithRGBString(colorString) : colorWithHexString(colorString);;
 }
 
