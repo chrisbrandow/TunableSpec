@@ -338,7 +338,7 @@ typedef NS_ENUM(NSUInteger, KFSliderColorComponent) {
     if (![self container]) {
 
         self.colorStrings = @[@"Hue", @"Sat.", @"Bright.", @"Alpha"];
-
+        
         UIView *container = [[UIView alloc] init];
         UISlider *slider = [[UISlider alloc] init];
         _KFCalloutView *callout = [[_KFCalloutView alloc] init];
@@ -747,7 +747,7 @@ static NSMutableDictionary *sSpecsByName;
     [mainView setBackgroundColor:[[UIColor blackColor] colorWithAlphaComponent:0.6]];
     [[mainView layer] setBorderColor:[[UIColor whiteColor] CGColor]];
     [[mainView layer] setCornerRadius:5];
-    
+    //I think that just need to add a scroll view, pin it to mainView, then add views to the scrollview
     UIView *lastControl = nil;
     for (_KFSpecItem *def in _KFSpecItems) {
         UILabel *label = [[UILabel alloc] init];
