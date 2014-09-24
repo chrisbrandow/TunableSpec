@@ -336,7 +336,10 @@ typedef NS_ENUM(NSUInteger, KFSliderColorComponent) {
 
 - (UIView *)tuningView {
     if (![self container]) {
-        self.colorStrings = @[@"Red", @"Green", @"Blue", @"Alpha"];
+//        self.colorStrings = @[@"Red", @"Green", @"Blue", @"Alpha"];
+        //updated with Hue
+        self.colorStrings = @[@"Hue", @"Sat.", @"Bright.", @"Alpha"];
+
         UIView *container = [[UIView alloc] init];
         UISlider *slider = [[UISlider alloc] init];
         _KFCalloutView *callout = [[_KFCalloutView alloc] init];
@@ -385,24 +388,35 @@ typedef NS_ENUM(NSUInteger, KFSliderColorComponent) {
 - (void)takeSliderValue:(UISlider *)slider {
     
     
-    CGColorRef color = [[self colorValue] CGColor];
+//    CGColorRef color = [[self colorValue] CGColor];
 
-    int numComponents = CGColorGetNumberOfComponents(color);
+//    NSInteger numComponents = CGColorGetNumberOfComponents(color);
     
-    if (numComponents != 4) {
-        return;
-    }
+//    if (numComponents != 4) {
+//        return;
+//    }
+//    
+//    const CGFloat *components = CGColorGetComponents(color);
+//    
+//    NSMutableArray *c = [NSMutableArray new];
+//    
+//    for (int i = 0; i < 4; i++) {
+//        c[i] = (i == self.colorComponent) ? @([slider value]/[slider maximumValue]) : @(components[i]);
+//    }
+//    
+//    [self setColorValue:[UIColor colorWithRed:[c[0] floatValue] green:[c[1] floatValue] blue:[c[2] floatValue] alpha:[c[3] floatValue]]];
     
-    const CGFloat *components = CGColorGetComponents(color);
+    //updated with Hue
+    
+    CGFloat *components = malloc(4*sizeof(CGFloat));
 
-    NSMutableArray *c = [NSMutableArray new];
-    
-    for (int i = 0; i < 4; i++) {
-        c[i] = (i == self.colorComponent) ? @([slider value]/[slider maximumValue]) : @(components[i]);
+    if ([[self colorValue] getHue:&components[0] saturation:&components[1] brightness:&components[2] alpha:&components[3]]) {
+
+        components[self.colorComponent] =  [slider value]/[slider maximumValue];// : components[i];
+        [self setColorValue:[UIColor colorWithHue:components[0] saturation:components[1] brightness:components[2] alpha:components[3]]];
+
     }
-    
-    [self setColorValue:[UIColor colorWithRed:[c[0] floatValue] green:[c[1] floatValue] blue:[c[2] floatValue] alpha:[c[3] floatValue]]];
-    
+
 }
 
 - (id)colorValue {
@@ -419,16 +433,24 @@ typedef NS_ENUM(NSUInteger, KFSliderColorComponent) {
 - (CGFloat)valueForSlider {
     
     
-    CGColorRef color = [[self colorValue] CGColor];
-    
-    NSUInteger numComponents = CGColorGetNumberOfComponents(color);
-    
-    if (numComponents == 4) {
-        const CGFloat *components = CGColorGetComponents(color);
-        CGFloat currentComponentValue = components[self.colorComponent];
-        return currentComponentValue;
-        
+
+    //updated for hue
+    CGFloat *components = malloc(4*sizeof(CGFloat));
+    if ([[self colorValue] getHue:&components[0] saturation:&components[1] brightness:&components[2] alpha:&components[3]]) {
+
+        return components[self.colorComponent];
+
     }
+    
+//    CGColorRef color = [[self colorValue] CGColor];
+
+//    NSUInteger numComponents = CGColorGetNumberOfComponents(color);
+//    if (numComponents == 4) {
+//        const CGFloat *components = CGColorGetComponents(color);
+//        CGFloat currentComponentValue = components[self.colorComponent];
+//        return currentComponentValue;
+//        
+//    }
     
     return 0;
 }
@@ -469,7 +491,8 @@ typedef NS_ENUM(NSUInteger, KFSliderColorComponent) {
 
 - (NSString *)stringForCalloutView {
     
-    return [NSString stringWithFormat:@"%@: %.0f", self.colorStrings[self.colorComponent], 255*self.slider.value/self.slider.maximumValue];
+//    return [NSString stringWithFormat:@"%@: %.0f", self.colorStrings[self.colorComponent], 255*self.slider.value/self.slider.maximumValue];
+    return [NSString stringWithFormat:@"%@: %.0f", self.colorStrings[self.colorComponent], 100*self.slider.value/self.slider.maximumValue];
 }
 
 #pragma mark longPressGestureRecognizer, helper & delegate methods
@@ -541,12 +564,11 @@ typedef NS_ENUM(NSUInteger, KFSliderColorComponent) {
         const CGFloat *c = CGColorGetComponents(color);
         
         NSString *hexString = [NSString stringWithFormat:@"#%.2lX%.2lX%.2lX, Alpha: %.3f", lround(255*c[0]), lround(255*c[1]), lround(255*c[2]), c[3]];
-        
         NSString *rgbRawString = [NSString stringWithFormat:@"%3zd, %3zd %3zd, Alpha: %.3f", lround(255*c[0]), lround(255*c[1]), lround(255*c[2]), c[3]]; //255
         NSString *rgbDecimalString = [NSString stringWithFormat:@"%.3f, %.3f, %.3f, Alpha: %.3f", c[0], c[1], c[2], c[3]];  //.3
         NSString *UIColorString = [NSString stringWithFormat:@"[UIColor colorWithRed:%.3f green:%.3f blue:%.3f alpha:%.3f]", c[0], c[1], c[2], c[3]]; //colorWith
         
-        return @[hexString, rgbRawString, rgbDecimalString, UIColorString];
+        return @[hexString, rgbRawString, rgbDecimalString, UIColorString, ];
         
     }
     return nil;
@@ -555,6 +577,7 @@ typedef NS_ENUM(NSUInteger, KFSliderColorComponent) {
 
 - (UIColor *)colorForString:(NSString *)colorString {
     /*flexible for RGB or hexString input*/
+    
     return ([colorString rangeOfString:@","].location != NSNotFound) ? colorWithRGBString(colorString) : colorWithHexString(colorString);;
 }
 
@@ -589,6 +612,39 @@ static UIColor *colorWithRGBString(NSString *rgbString) {
         b = b/255.0 ;
         
     }
+    
+    
+    
+    return [UIColor colorWithRed:r  green:g  blue:b alpha:a];
+    
+}
+static UIColor *colorWithRGBAString(NSString *rgbString) {
+    
+    if (stringIsEmpty(rgbString)) {
+		return [UIColor blackColor];
+    }
+    
+    NSScanner *scanner = [NSScanner scannerWithString:rgbString];
+    [scanner setCharactersToBeSkipped:[NSCharacterSet characterSetWithCharactersInString:@", "] ];
+    float r, g, b, a;
+    BOOL scanned;
+    
+    scanned = [scanner scanFloat:&r];
+    scanned = [scanner scanFloat:&g];
+    scanned = [scanner scanFloat:&b];
+    if (![scanner scanFloat:&a]) { //if only three values entered, assume alpha = 1
+        a = 1;
+    }
+    
+    a = (a > 1) ? 1 : a;
+    
+    if (r > 1|| g > 1 || b > 1) { //if any r,g,b > 1, assume scale = 255
+        r = r/255.0 ;
+        g = g/255.0 ;
+        b = b/255.0 ;
+        
+    }
+    
     
     
     return [UIColor colorWithRed:r  green:g  blue:b alpha:a];

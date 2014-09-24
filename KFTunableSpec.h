@@ -99,6 +99,11 @@ Sample JSON:
  
  */
 
+/*
+ colorSliderSpec:
+ colors are read and output as an rgba string:  rgba(255,0,0,0.3)
+ */
+
 #import <UIKit/UIKit.h>
 
 
