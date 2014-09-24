@@ -340,19 +340,39 @@ typedef NS_ENUM(NSUInteger, KFSliderColorComponent) {
         self.colorStrings = @[@"Hue", @"Sat.", @"Bright.", @"Alpha"];
         
         UIView *container = [[UIView alloc] init];
+        [container setBackgroundColor:[[UIColor whiteColor] colorWithAlphaComponent:0.0]];
         UISlider *slider = [[UISlider alloc] init];
+        UISlider *secondSlider = [[UISlider alloc] init];
+        UISlider *thirdSlider = [[UISlider alloc] init];
+        UISlider *fourthSlider = [[UISlider alloc] init];
         _KFCalloutView *callout = [[_KFCalloutView alloc] init];
-        NSDictionary *views = NSDictionaryOfVariableBindings(slider, callout);
-
+        NSDictionary *views = NSDictionaryOfVariableBindings(fourthSlider, thirdSlider, secondSlider, slider, callout);
+        
         [self setSlider:slider];
         [self updateSpecTintColor];
-
+        //put sliders into an array, and then you can just set the values with the corresponding array
+        //loop through all this setup
         [slider setTranslatesAutoresizingMaskIntoConstraints:NO];
+        [secondSlider setTranslatesAutoresizingMaskIntoConstraints:NO];
+        [thirdSlider setTranslatesAutoresizingMaskIntoConstraints:NO];
+        [fourthSlider setTranslatesAutoresizingMaskIntoConstraints:NO];
         [container addSubview:slider];
+        [container addSubview:secondSlider];
+        [container addSubview:thirdSlider];
+        [container addSubview:fourthSlider];
         [container addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"H:|-0-[slider]-0-|" options:0 metrics:nil views:views]];
-        [container addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"V:|-0-[slider]-0-|" options:0 metrics:nil views:views]];
+        [container addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"V:|-0-[slider]-0-[secondSlider]-[thirdSlider]-[fourthSlider]-0-|" options:0 metrics:nil views:views]];
+        [container addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"H:|-0-[secondSlider]-0-|" options:0 metrics:nil views:views]];
+        [container addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"H:|-0-[thirdSlider]-0-|" options:0 metrics:nil views:views]];
+        [container addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"H:|-0-[fourthSlider]-0-|" options:0 metrics:nil views:views]];
         [slider addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"[slider(>=300@720)]" options:0 metrics:nil views:views]];
         [slider addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"V:[slider(>=25@750)]" options:0 metrics:nil views:views]];
+        [secondSlider addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"[secondSlider(>=300@720)]" options:0 metrics:nil views:views]];
+        [secondSlider addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"V:[secondSlider(>=25@750)]" options:0 metrics:nil views:views]];
+        [thirdSlider addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"[thirdSlider(>=300@720)]" options:0 metrics:nil views:views]];
+        [thirdSlider addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"V:[thirdSlider(>=25@750)]" options:0 metrics:nil views:views]];
+        [fourthSlider addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"[fourthSlider(>=300@720)]" options:0 metrics:nil views:views]];
+        [fourthSlider addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"V:[fourthSlider(>=25@750)]" options:0 metrics:nil views:views]];
 
         [slider setMinimumValue:[[self sliderMinValue] doubleValue]];
         [slider setMaximumValue:[[self sliderMaxValue] doubleValue]];
