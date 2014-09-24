@@ -42,7 +42,7 @@ static UIImage *CalloutArrowImage();
 - (id)initWithJSONRepresentation:(NSDictionary *)json {
 
     if (json[@"key"] == nil) return nil;
-    
+
     self = [super init];
     if (self) {
         for (NSString *prop in [[self class] propertiesForJSONRepresentation]) {
@@ -52,6 +52,7 @@ static UIImage *CalloutArrowImage();
         [self setDefaultValue:[self objectValue]];
 
         _maintenanceBlocksByOwner = [NSMapTable weakToStrongObjectsMapTable];
+        
     }
     return self;
 }
@@ -292,6 +293,7 @@ typedef NS_ENUM(NSUInteger, KFSliderColorComponent) {
 //update objectValue
 //update description to output hex, or uicolor strings
 + (NSArray *)propertiesForJSONRepresentation {
+
     /*only accepts colorValue as an input. rgb values are fixed between 0-255*/
     static NSArray *sProps;
     static dispatch_once_t onceToken;
@@ -307,11 +309,9 @@ typedef NS_ENUM(NSUInteger, KFSliderColorComponent) {
     if (json[@"colorValue"] == nil) {
         return nil;
     } else {
+        //problem is that initwith is setting colorValue as a string, when I have it implemented as a color
+        self = [super initWithJSONRepresentation:json];
 
-        NSMutableDictionary *newJSON = [NSMutableDictionary dictionaryWithDictionary:json];
-
-        newJSON[@"colorValue"] = [self colorForString:json[@"colorValue"]];
-        self = [super initWithJSONRepresentation:newJSON];
         return self;
     }
 }
@@ -327,7 +327,7 @@ typedef NS_ENUM(NSUInteger, KFSliderColorComponent) {
         id obj = [self valueForKey:prop];
 
         if ([obj isKindOfClass:[UIColor class]]) {
-            dict[prop] = [self stringsFromColor:obj];
+            dict[prop] = [self rgbaStringForColor:obj];
         }
     }
     
@@ -336,8 +336,7 @@ typedef NS_ENUM(NSUInteger, KFSliderColorComponent) {
 
 - (UIView *)tuningView {
     if (![self container]) {
-//        self.colorStrings = @[@"Red", @"Green", @"Blue", @"Alpha"];
-        //updated with Hue
+
         self.colorStrings = @[@"Hue", @"Sat.", @"Bright.", @"Alpha"];
 
         UIView *container = [[UIView alloc] init];
@@ -387,70 +386,41 @@ typedef NS_ENUM(NSUInteger, KFSliderColorComponent) {
 
 - (void)takeSliderValue:(UISlider *)slider {
     
-    
-//    CGColorRef color = [[self colorValue] CGColor];
-
-//    NSInteger numComponents = CGColorGetNumberOfComponents(color);
-    
-//    if (numComponents != 4) {
-//        return;
-//    }
-//    
-//    const CGFloat *components = CGColorGetComponents(color);
-//    
-//    NSMutableArray *c = [NSMutableArray new];
-//    
-//    for (int i = 0; i < 4; i++) {
-//        c[i] = (i == self.colorComponent) ? @([slider value]/[slider maximumValue]) : @(components[i]);
-//    }
-//    
-//    [self setColorValue:[UIColor colorWithRed:[c[0] floatValue] green:[c[1] floatValue] blue:[c[2] floatValue] alpha:[c[3] floatValue]]];
-    
-    //updated with Hue
-    
     CGFloat *components = malloc(4*sizeof(CGFloat));
 
-    if ([[self colorValue] getHue:&components[0] saturation:&components[1] brightness:&components[2] alpha:&components[3]]) {
+    if ([colorWithRGBAString([self colorValue]) getHue:&components[0] saturation:&components[1] brightness:&components[2] alpha:&components[3]]) {
 
         components[self.colorComponent] =  [slider value]/[slider maximumValue];// : components[i];
-        [self setColorValue:[UIColor colorWithHue:components[0] saturation:components[1] brightness:components[2] alpha:components[3]]];
+
+        [self setColorValue:[self rgbaStringForColor:[UIColor colorWithHue:components[0] saturation:components[1] brightness:components[2] alpha:components[3]]]];
 
     }
 
 }
 
 - (id)colorValue {
-    
+    //this needs to return, just the object value
     return [self objectValue];
 }
 
-- (void)setColorValue:(UIColor *)color {
-    
+- (void)setColorValue:(NSString *)color {
+    //this needs to take a string
     [self setObjectValue:color];
     
 }
 
 - (CGFloat)valueForSlider {
     
-    
+    //this needs to update from a string
+
 
     //updated for hue
     CGFloat *components = malloc(4*sizeof(CGFloat));
-    if ([[self colorValue] getHue:&components[0] saturation:&components[1] brightness:&components[2] alpha:&components[3]]) {
+    if ([colorWithRGBAString([self colorValue]) getHue:&components[0] saturation:&components[1] brightness:&components[2] alpha:&components[3]]) {
 
         return components[self.colorComponent];
 
     }
-    
-//    CGColorRef color = [[self colorValue] CGColor];
-
-//    NSUInteger numComponents = CGColorGetNumberOfComponents(color);
-//    if (numComponents == 4) {
-//        const CGFloat *components = CGColorGetComponents(color);
-//        CGFloat currentComponentValue = components[self.colorComponent];
-//        return currentComponentValue;
-//        
-//    }
     
     return 0;
 }
@@ -491,7 +461,7 @@ typedef NS_ENUM(NSUInteger, KFSliderColorComponent) {
 
 - (NSString *)stringForCalloutView {
     
-//    return [NSString stringWithFormat:@"%@: %.0f", self.colorStrings[self.colorComponent], 255*self.slider.value/self.slider.maximumValue];
+
     return [NSString stringWithFormat:@"%@: %.0f", self.colorStrings[self.colorComponent], 100*self.slider.value/self.slider.maximumValue];
 }
 
@@ -553,79 +523,32 @@ typedef NS_ENUM(NSUInteger, KFSliderColorComponent) {
 
 #pragma mark color <--> string methods
 
-- (NSArray *)stringsFromColor:(UIColor *)colorValue {
-    /*implemented for easiest copying and pasting*/
-    
-    CGColorRef color = [colorValue CGColor];
-    
-    NSUInteger numComponents = CGColorGetNumberOfComponents(color);
-    
-    if (numComponents == 4) {
-        const CGFloat *c = CGColorGetComponents(color);
-        
-        NSString *hexString = [NSString stringWithFormat:@"#%.2lX%.2lX%.2lX, Alpha: %.3f", lround(255*c[0]), lround(255*c[1]), lround(255*c[2]), c[3]];
-        NSString *rgbRawString = [NSString stringWithFormat:@"%3zd, %3zd %3zd, Alpha: %.3f", lround(255*c[0]), lround(255*c[1]), lround(255*c[2]), c[3]]; //255
-        NSString *rgbDecimalString = [NSString stringWithFormat:@"%.3f, %.3f, %.3f, Alpha: %.3f", c[0], c[1], c[2], c[3]];  //.3
-        NSString *UIColorString = [NSString stringWithFormat:@"[UIColor colorWithRed:%.3f green:%.3f blue:%.3f alpha:%.3f]", c[0], c[1], c[2], c[3]]; //colorWith
-        
-        return @[hexString, rgbRawString, rgbDecimalString, UIColorString, ];
-        
-    }
-    return nil;
-    
-}
+- (NSString *)rgbaStringForColor:(UIColor *)color {
 
-- (UIColor *)colorForString:(NSString *)colorString {
-    /*flexible for RGB or hexString input*/
+    CGFloat *c = malloc(4*sizeof(CGFloat));
     
-    return ([colorString rangeOfString:@","].location != NSNotFound) ? colorWithRGBString(colorString) : colorWithHexString(colorString);;
+    if ([color getRed:&c[0] green:&c[1] blue:&c[2] alpha:&c[3]]) {
+        return [NSString stringWithFormat:@"rgba(%.0f,%.0f,%.0f,%.3f", 255*c[0], 255*c[1], 255*c[2], c[3]];
+
+    }
+
+    return @"rgba(0, 0, 0, 1)";
+    
 }
 
 static BOOL stringIsEmpty(NSString *s) {
 	return s == nil || [s length] == 0;
 }
 
-static UIColor *colorWithRGBString(NSString *rgbString) {
-    
-    
-    if (stringIsEmpty(rgbString)) {
-		return [UIColor blackColor];
-    }
-    
-    NSScanner *scanner = [NSScanner scannerWithString:rgbString];
-    [scanner setCharactersToBeSkipped:[NSCharacterSet characterSetWithCharactersInString:@", "] ];
-    float r, g, b, a;
-    BOOL scanned;
-    
-    scanned = [scanner scanFloat:&r];
-    scanned = [scanner scanFloat:&g];
-    scanned = [scanner scanFloat:&b];
-    if (![scanner scanFloat:&a]) { //if only three values entered, assume alpha = 1
-        a = 1;
-    }
-    
-    a = (a > 1) ? 1 : a;
-    
-    if (r > 1|| g > 1 || b > 1) { //if any r,g,b > 1, assume scale = 255
-        r = r/255.0 ;
-        g = g/255.0 ;
-        b = b/255.0 ;
-        
-    }
-    
-    
-    
-    return [UIColor colorWithRed:r  green:g  blue:b alpha:a];
-    
-}
 static UIColor *colorWithRGBAString(NSString *rgbString) {
+
     
     if (stringIsEmpty(rgbString)) {
 		return [UIColor blackColor];
     }
     
     NSScanner *scanner = [NSScanner scannerWithString:rgbString];
-    [scanner setCharactersToBeSkipped:[NSCharacterSet characterSetWithCharactersInString:@", "] ];
+    [scanner setCharactersToBeSkipped:[NSCharacterSet characterSetWithCharactersInString:@"rgba(, "] ];
     float r, g, b, a;
     BOOL scanned;
     
@@ -636,43 +559,8 @@ static UIColor *colorWithRGBAString(NSString *rgbString) {
         a = 1;
     }
     
-    a = (a > 1) ? 1 : a;
+    return [UIColor colorWithRed:r/255.0  green:g/255.0  blue:b/255.0 alpha:a];
     
-    if (r > 1|| g > 1 || b > 1) { //if any r,g,b > 1, assume scale = 255
-        r = r/255.0 ;
-        g = g/255.0 ;
-        b = b/255.0 ;
-        
-    }
-    
-    
-    
-    return [UIColor colorWithRed:r  green:g  blue:b alpha:a];
-    
-}
-
-static UIColor *colorWithHexString(NSString *hexString) {
-    
-	/*Picky. Crashes by design.*/
-	/*borrowed directly from Brent Simmons VSTheme work*/
-	if (stringIsEmpty(hexString))
-		return [UIColor blackColor];
-    
-	NSMutableString *s = [hexString mutableCopy];
-	[s replaceOccurrencesOfString:@"#" withString:@"" options:0 range:NSMakeRange(0, [hexString length])];
-	CFStringTrimWhitespace((__bridge CFMutableStringRef)s);
-    
-	NSString *redString = [s substringToIndex:2];
-	NSString *greenString = [s substringWithRange:NSMakeRange(2, 2)];
-	NSString *blueString = [s substringWithRange:NSMakeRange(4, 2)];
-    
-	unsigned int red = 0, green = 0, blue = 0;
-	[[NSScanner scannerWithString:redString] scanHexInt:&red];
-	[[NSScanner scannerWithString:greenString] scanHexInt:&green];
-	[[NSScanner scannerWithString:blueString] scanHexInt:&blue];
-    
-    
-	return [UIColor colorWithRed:(float)red/255.0f green:(float)green/255.0f blue:(float)blue/255.0f alpha:1.0f];
 }
 
 @end
@@ -826,7 +714,7 @@ static NSMutableDictionary *sSpecsByName;
 }
 
 - (UIColor *)colorForKey:(NSString *)key {
-    return [[self _KFSpecItemForKey:key] objectValue] ;
+    return colorWithRGBAString([[self _KFSpecItemForKey:key] objectValue]) ;
 }
 
 
@@ -849,7 +737,8 @@ static NSMutableDictionary *sSpecsByName;
 
 - (void)withColorForKey:(NSString *)key owner:(id)weaklyHeldOwner maintain:(void (^)(id owner, UIColor *flag))maintenanceBlock {
     [[self _KFSpecItemForKey:key] withOwner:weaklyHeldOwner maintain:^(id owner, id objectValue) {
-        maintenanceBlock(owner, objectValue);
+
+        maintenanceBlock(owner, colorWithRGBAString(objectValue));
     }];
 }
 

@@ -89,17 +89,17 @@
     [[[self shapeView] layer] setCornerRadius:[[self shapeView] bounds].size.width/2];
 
     
-    [spec withColorForKey:@"Color" owner:self maintain:^(id owner, UIColor *flag) {
+    [spec withColorForKey:@"aColor" owner:self maintain:^(id owner, UIColor *flag) {
         [self.shapeView setBackgroundColor:flag ?: self.shapeView.backgroundColor];
     }];
     
-    [spec withColorForKey:@"aColor" owner:self maintain:^(id owner, UIColor *flag) {
-        [self.view setBackgroundColor:flag ?: self.view.backgroundColor];
-    }];
-    
-    [spec withColorForKey:@"bColor" owner:self maintain:^(id owner, UIColor *flag) {
-        [self.shapeView.layer setBorderColor:[flag CGColor] ?: self.shapeView.layer.borderColor];
-    }];
+//    [spec withColorForKey:@"aColor" owner:self maintain:^(id owner, UIColor *flag) {
+//        [self.view setBackgroundColor:flag ?: self.view.backgroundColor];
+//    }];
+//    
+//    [spec withColorForKey:@"bColor" owner:self maintain:^(id owner, UIColor *flag) {
+//        [self.shapeView.layer setBorderColor:[flag CGColor] ?: self.shapeView.layer.borderColor];
+//    }];
 
 
 

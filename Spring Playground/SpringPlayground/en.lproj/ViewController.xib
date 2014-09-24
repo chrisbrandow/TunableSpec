@@ -44,7 +44,7 @@ Tap three times with two fingers to bring up tuning UI. That's option-triple-tap
                                 <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="WS3-Mz-5yn" userLabel="HorizontallyMovableView">
                                     <rect key="frame" x="334" y="20" width="100" height="100"/>
                                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                    <color key="backgroundColor" red="0.09803922474" green="0.58039218189999997" blue="0.98039221759999995" alpha="1" colorSpace="deviceRGB"/>
+                                    <color key="backgroundColor" red="0.504851310483871" green="0.39780745967741937" blue="0.0" alpha="1" colorSpace="deviceRGB"/>
                                     <gestureRecognizers/>
                                     <constraints>
                                         <constraint firstAttribute="height" constant="100" id="Lwy-5G-esU"/>
