@@ -320,24 +320,6 @@ typedef NS_ENUM(NSUInteger, KFSliderColorComponent) {
     }
 }
 
-//- (NSDictionary *)jsonRepresentation {
-//    /*required because uicolor is not a valid json object*/
-//    /*I think that this should be able to go away*/
-//    NSMutableDictionary *dict = [NSMutableDictionary dictionary];
-//    
-//    for (NSString *prop in [[self class] propertiesForJSONRepresentation]) {
-//        
-//        [dict setObject:[self valueForKey:prop] forKey:prop];
-//        id obj = [self valueForKey:prop];
-//
-//        if ([obj isKindOfClass:[UIColor class]]) {
-//            dict[prop] = [self rgbaStringForColor:obj];
-//        }
-//    }
-//    
-//    return dict;
-//}
-
 - (UIView *)tuningView {
     if (![self container]) {
 
