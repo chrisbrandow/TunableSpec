@@ -111,6 +111,13 @@ Sample JSON:
 
 + (id)specNamed:(NSString *)name;
 
+#pragma mark Adding New Spec Items
+/** at the moment requires label and an initial value. can pass nil, 1 or 2 values to minMax*/
+
+- (void)addDoubleWithLabel:(NSString *)label forValue:(double)value andMinMaxValues:(NSArray *)minMax;
+//- (void)addBoolWithLabel:(NSString *)label forValue:(double)value andMinMaxValues:(NSArray *)minMax;
+//- (void)addColorWithLabel:(NSString *)label forValue:(double)value andMinMaxValues:(NSArray *)minMax;
+
 #pragma mark Getting Values
 
 - (double)doubleForKey:(NSString *)key;

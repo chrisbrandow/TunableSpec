@@ -81,26 +81,21 @@
     }];
     [[self shapeView] addMotionEffect:xMotionEffect];
     [[self shapeView] addMotionEffect:yMotionEffect];
-    
+    [[[self shapeView] layer] setCornerRadius:[[self shapeView] bounds].size.width/2];
+
+
+    [spec addDoubleWithLabel:@"roundness" forValue:self.shapeView.layer.cornerRadius andMinMaxValues:nil];
+    [spec withDoubleForKey:@"roundness" owner:self maintain:^(id owner, double doubleValue) {
+        [[[owner shapeView]
+          layer] setCornerRadius:doubleValue];
+    }];
     [spec withBoolForKey:@"ShowBackgroundColors" owner:self maintain:^(id owner, BOOL flag) {
         [[owner verticalMovementView] setBackgroundColor:flag ? [UIColor magentaColor] : nil];
     }];
     
-    [[[self shapeView] layer] setCornerRadius:[[self shapeView] bounds].size.width/2];
-
-    
     [spec withColorForKey:@"aColor" owner:self maintain:^(id owner, UIColor *flag) {
-        [self.shapeView setBackgroundColor:flag ?: self.shapeView.backgroundColor];
+        [[owner shapeView] setBackgroundColor:flag ?: self.shapeView.backgroundColor];
     }];
-    
-//    [spec withColorForKey:@"aColor" owner:self maintain:^(id owner, UIColor *flag) {
-//        [self.view setBackgroundColor:flag ?: self.view.backgroundColor];
-//    }];
-//    
-//    [spec withColorForKey:@"bColor" owner:self maintain:^(id owner, UIColor *flag) {
-//        [self.shapeView.layer setBorderColor:[flag CGColor] ?: self.shapeView.layer.borderColor];
-//    }];
-
 
 
 }
