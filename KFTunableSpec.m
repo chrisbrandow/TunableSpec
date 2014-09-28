@@ -280,22 +280,18 @@ typedef NS_ENUM(NSUInteger, KFSliderColorComponent) {
 @property (nonatomic) NSNumber *sliderMinValue;
 @property (nonatomic) NSNumber *sliderMaxValue;
 @property UIView *container;
-//@property UISlider *slider;
 @property NSArray *sliders;
 @property _KFCalloutView *calloutView;
 @property NSLayoutConstraint *calloutXCenter;
 @property NSLayoutConstraint *calloutVConstraint;
 @property (nonatomic) NSArray *colorStrings;
 @property (nonatomic) KFSliderColorComponent colorComponent;
-@property (nonatomic) NSInteger indexOfCurrentSlider;
+@property (nonatomic) NSInteger indexOfCurrentSlider; //I don't love that I'm using this. but currently need it for callout label maintin block
 
 @end
 
 @implementation _KFColorSilderSpecItem
-//set up following:
-//init with Hex, rgb (0-255 or 0-1) and alpha
-//update objectValue
-//update description to output hex, or uicolor strings
+
 + (NSArray *)propertiesForJSONRepresentation {
 
     /*only accepts colorValue as an input. rgb values are fixed between 0-255*/
@@ -313,7 +309,7 @@ typedef NS_ENUM(NSUInteger, KFSliderColorComponent) {
     if (json[@"colorValue"] == nil) {
         return nil;
     } else {
-        //problem is that initwith is setting colorValue as a string, when I have it implemented as a color
+
         self = [super initWithJSONRepresentation:json];
 
         return self;
@@ -367,7 +363,7 @@ typedef NS_ENUM(NSUInteger, KFSliderColorComponent) {
 
         [callout setTranslatesAutoresizingMaskIntoConstraints:NO];
         [container addSubview:callout];
-        //I would prefer to do this with lastSlider, but need to change constraint setting
+
         self.calloutVConstraint = [[NSLayoutConstraint constraintsWithVisualFormat:@"V:[callout]-3-[lastSlider]" options:0 metrics:nil views:NSDictionaryOfVariableBindings(lastSlider, callout)] firstObject];
         [container addConstraints:@[self.calloutVConstraint]];
         
@@ -420,10 +416,6 @@ typedef NS_ENUM(NSUInteger, KFSliderColorComponent) {
 }
 
 - (CGFloat)valueForSliderAtIndex:(NSInteger)index {
-
-    //this needs to be valueForSliderAtIndex:(NSInteger)index {
-    //this needs to update from a string
-    
     
     //updated for hue
     CGFloat *components = malloc(4*sizeof(CGFloat));
@@ -688,10 +680,6 @@ static NSMutableDictionary *sSpecsByName;
     } else if ([minMax firstObject] != 0) {
         max = minMax[0];
     }
-
-    //default min max = 0 - 2*value
-    //count == 2, replace them both
-    //count == 1, replace max if it is a non-zero,
 
     NSDictionary *rep = @{@"key" : label, @"label" : label,@"sliderValue" : @(value), @"sliderMinValue" : min, @"sliderMaxValue" : max};
 
