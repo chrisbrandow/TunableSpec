@@ -320,23 +320,23 @@ typedef NS_ENUM(NSUInteger, KFSliderColorComponent) {
     }
 }
 
-- (NSDictionary *)jsonRepresentation {
-    /*required because uicolor is not a valid json object*/
-    /*I think that this should be able to go away*/
-    NSMutableDictionary *dict = [NSMutableDictionary dictionary];
-    
-    for (NSString *prop in [[self class] propertiesForJSONRepresentation]) {
-        
-        [dict setObject:[self valueForKey:prop] forKey:prop];
-        id obj = [self valueForKey:prop];
-
-        if ([obj isKindOfClass:[UIColor class]]) {
-            dict[prop] = [self rgbaStringForColor:obj];
-        }
-    }
-    
-    return dict;
-}
+//- (NSDictionary *)jsonRepresentation {
+//    /*required because uicolor is not a valid json object*/
+//    /*I think that this should be able to go away*/
+//    NSMutableDictionary *dict = [NSMutableDictionary dictionary];
+//    
+//    for (NSString *prop in [[self class] propertiesForJSONRepresentation]) {
+//        
+//        [dict setObject:[self valueForKey:prop] forKey:prop];
+//        id obj = [self valueForKey:prop];
+//
+//        if ([obj isKindOfClass:[UIColor class]]) {
+//            dict[prop] = [self rgbaStringForColor:obj];
+//        }
+//    }
+//    
+//    return dict;
+//}
 
 - (UIView *)tuningView {
     if (![self container]) {
@@ -509,7 +509,7 @@ typedef NS_ENUM(NSUInteger, KFSliderColorComponent) {
     CGFloat *c = malloc(4*sizeof(CGFloat));
     
     if ([color getRed:&c[0] green:&c[1] blue:&c[2] alpha:&c[3]]) {
-        return [NSString stringWithFormat:@"rgba(%.0f,%.0f,%.0f,%.3f", 255*c[0], 255*c[1], 255*c[2], c[3]];
+        return [NSString stringWithFormat:@"rgba(%.0f,%.0f,%.0f,%.3f)", 255*c[0], 255*c[1], 255*c[2], c[3]];
 
     }
 

@@ -83,12 +83,14 @@
     [[self shapeView] addMotionEffect:yMotionEffect];
     [[[self shapeView] layer] setCornerRadius:[[self shapeView] bounds].size.width/2];
 
-
+    //New AddSpec method for test purposes here:
     [spec addDoubleWithLabel:@"roundness" forValue:self.shapeView.layer.cornerRadius andMinMaxValues:nil];
+    
     [spec withDoubleForKey:@"roundness" owner:self maintain:^(id owner, double doubleValue) {
         [[[owner shapeView]
           layer] setCornerRadius:doubleValue];
     }];
+    
     [spec withBoolForKey:@"ShowBackgroundColors" owner:self maintain:^(id owner, BOOL flag) {
         [[owner verticalMovementView] setBackgroundColor:flag ? [UIColor magentaColor] : nil];
     }];

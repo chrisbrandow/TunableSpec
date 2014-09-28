@@ -61,48 +61,35 @@ Sample JSON:
 
 */
 
-/* Chris Brandow Notes 2014-09-08
+/* Chris Brandow Notes 2014-09-28
  
-    Color values can tuned with a slider one component at a time. The user switches between components by long-pressing on the slider.
+    Color values are tuned with a set of 4 HSB & Alpha sliders.
 
-    Color sliders can be initiated from JSON with either a comma-delimited list of 0-1 or 0-255 rgb values, or with a hex string.
+    Color sliders can be initiated from JSON with either an rgba text string in JSON.
 
-    Output is an array of 4 strings, to ease possible copying and pasting into other development tools.
+    Output is an identical rgba text string.
  
     examples for color slider
 
  {
-     "colorValue" : "0.58, 0., 0.28, 1",
-     "key" : "aColor",
-     "label" : "viewBack"
- },  {
-     "colorValue" : "45, 124, 100",
+     "colorValue" : "rgba(123,150,200,.95)"
      "key" : "Color",
      "label" : "shapeBack"
- },  {
-     "colorValue" : "#39CCCC",
-     "key" : "bColor",
-     "label" : "shapeBorder"
  }
- 
     sample output:
  {
-     "key" : "Color",
-     "label" : "shapeBack",
-     "colorValue" : [
-     "#717C64, Alpha: 1.000",
-     "113, 124 100, Alpha: 1.000",
-     "0.444, 0.486, 0.392, Alpha: 1.000",
-     "[UIColor colorWithRed:0.444 green:0.486 blue:0.392 alpha:1.000]"
-     ]
+     "key" : "aColor",
+     "label" : "shapeColor",
+     "colorValue" : "rgba(123,100,0,.95)"
  },
  
+ 
+ Additionally, a trial method to create a doubleSpec within code has been implemented:
+ 
+ - (void)addDoubleWithLabel:(NSString *)label forValue:(double)value andMinMaxValues:(NSArray *)minMax;
+
  */
 
-/*
- colorSliderSpec:
- colors are read and output as an rgba string:  rgba(255,0,0,0.3)
- */
 
 #import <UIKit/UIKit.h>
 
@@ -112,7 +99,7 @@ Sample JSON:
 + (id)specNamed:(NSString *)name;
 
 #pragma mark Adding New Spec Items
-/** at the moment requires label and an initial value. can pass nil, 1 or 2 values to minMax*/
+/** at the moment requires label and an initial value. can pass nil, 1 or 2 values to minMax. Defaults values are min = 0, max = 2*value. the label doubles as the key, for convenience*/
 
 - (void)addDoubleWithLabel:(NSString *)label forValue:(double)value andMinMaxValues:(NSArray *)minMax;
 //- (void)addBoolWithLabel:(NSString *)label forValue:(double)value andMinMaxValues:(NSArray *)minMax;
