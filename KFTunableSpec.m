@@ -388,7 +388,7 @@ typedef NS_ENUM(NSUInteger, KFSliderColorComponent) {
 
 - (void)takeColorSliderValue:(UISlider *)slider {
     
-    //this will become slider values setting the string object value directly
+    //I don't like that I am using a property to track the index of which slider is being used.
 
     CGFloat sliderIndex = (CGFloat)[self.sliders indexOfObject:slider];
     self.indexOfCurrentSlider = sliderIndex;
