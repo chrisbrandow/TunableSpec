@@ -395,10 +395,10 @@ typedef NS_ENUM(NSUInteger, KFSliderColorComponent) {
     self.calloutVConstraint.constant = 3 + (3 - sliderIndex)*39; //empirically derived number. seems to be the 25 + 7-[label]-7
 
     CGFloat *components = malloc(4*sizeof(CGFloat));
-    for (int i = 0; i < self.sliders.count; i++) {
-        UISlider *s = self.sliders[i];
-        components[i] = [s value]/[slider maximumValue];
-    }
+    
+    [self.sliders enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
+        components[idx] = [(UISlider *)obj value]/[slider maximumValue];
+    }];
 
     [self setColorValue:[self rgbaStringForColor:[UIColor colorWithHue:components[0] saturation:components[1] brightness:components[2] alpha:components[3]]]];
 
