@@ -274,9 +274,10 @@ typedef NS_ENUM(NSUInteger, KFSliderColorComponent) {
     KFBlue,
     KFAlpha
 };
+@protocol _KFColorSilderSpecItemDelegate;
+
 
 @interface _KFColorSilderSpecItem : _KFSpecItem <UIGestureRecognizerDelegate>
-
 @property (nonatomic) NSNumber *sliderMinValue;
 @property (nonatomic) NSNumber *sliderMaxValue;
 @property UIView *container;
@@ -287,8 +288,15 @@ typedef NS_ENUM(NSUInteger, KFSliderColorComponent) {
 @property (nonatomic) NSArray *colorStrings;
 @property (nonatomic) KFSliderColorComponent colorComponent;
 @property (nonatomic) NSInteger indexOfCurrentSlider; //I don't love that I'm using this. but currently need it for callout label maintin block
+@property (nonatomic) NSLayoutConstraint *bottomVerticalConstraint;
+@property (nonatomic, weak) id <_KFColorSilderSpecItemDelegate> delegate;
+@end
+@protocol _KFColorSilderSpecItemDelegate <NSObject>
+
+- (void)updateColorSpecConstraint:(NSLayoutConstraint *)constraint;
 
 @end
+
 
 @implementation _KFColorSilderSpecItem
 
@@ -324,6 +332,7 @@ typedef NS_ENUM(NSUInteger, KFSliderColorComponent) {
         UIView *container = [[UIView alloc] init];
         [container setBackgroundColor:[[UIColor whiteColor] colorWithAlphaComponent:0.2]];
         [[container layer] setCornerRadius:5];
+        [container setClipsToBounds:YES];
 
         _KFCalloutView *callout = [[_KFCalloutView alloc] init];
         
@@ -358,12 +367,18 @@ typedef NS_ENUM(NSUInteger, KFSliderColorComponent) {
             [self withOwner:self maintain:^(id owner, id objValue) { [currentSlider setValue:[self valueForSliderAtIndex:i]]; }];
 
         }
-
-        [container addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"V:[lastSlider]-2-|" options:0 metrics:nil views:NSDictionaryOfVariableBindings(lastSlider)]];
+        self.bottomVerticalConstraint = [NSLayoutConstraint constraintsWithVisualFormat:@"V:[lastSlider]-(-110)-|" options:0 metrics:nil views:NSDictionaryOfVariableBindings(lastSlider)].firstObject;
+        [container addConstraint:self.bottomVerticalConstraint];
 
         [callout setTranslatesAutoresizingMaskIntoConstraints:NO];
         [container addSubview:callout];
 
+        UITapGestureRecognizer *dTap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(tapped:)];
+        dTap.numberOfTapsRequired = 2;
+        dTap.numberOfTouchesRequired = 1;
+        
+        [container addGestureRecognizer:dTap];
+        
         self.calloutVConstraint = [[NSLayoutConstraint constraintsWithVisualFormat:@"V:[callout]-3-[lastSlider]" options:0 metrics:nil views:NSDictionaryOfVariableBindings(lastSlider, callout)] firstObject];
         [container addConstraints:@[self.calloutVConstraint]];
         
@@ -384,6 +399,12 @@ typedef NS_ENUM(NSUInteger, KFSliderColorComponent) {
         [self setContainer:container];
     }
     return [self container];
+}
+
+-(void)tapped:(UITapGestureRecognizer *)gr {
+
+    [self.delegate updateColorSpecConstraint:self.bottomVerticalConstraint];
+
 }
 
 - (void)takeColorSliderValue:(UISlider *)slider {
@@ -416,7 +437,7 @@ typedef NS_ENUM(NSUInteger, KFSliderColorComponent) {
 }
 
 - (CGFloat)valueForSliderAtIndex:(NSInteger)index {
-    
+
     //updated for hue
     CGFloat *components = malloc(4*sizeof(CGFloat));
     if ([colorWithRGBAString([self colorValue]) getHue:&components[0] saturation:&components[1] brightness:&components[2] alpha:&components[3]]) {
@@ -425,6 +446,7 @@ typedef NS_ENUM(NSUInteger, KFSliderColorComponent) {
         
     }
     
+
     return 0;
 }
 
@@ -580,7 +602,7 @@ static UIColor *colorWithRGBAString(NSString *rgbString) {
 @end
 
 
-@interface KFTunableSpec () <UIDocumentInteractionControllerDelegate, UIGestureRecognizerDelegate> {
+@interface KFTunableSpec () <UIDocumentInteractionControllerDelegate, UIGestureRecognizerDelegate, _KFColorSilderSpecItemDelegate> {
     NSMutableArray *_KFSpecItems;
     NSMutableArray *_savedDictionaryRepresentations;
     NSUInteger _currentSaveIndex;
@@ -595,7 +617,7 @@ static UIColor *colorWithRGBAString(NSString *rgbString) {
 @property UIButton *closeButton;
 @property NSLayoutConstraint *controlsXConstraint;
 @property NSLayoutConstraint *controlsYConstraint;
-
+@property UIView *tempView;
 @property UIDocumentInteractionController *interactionController; // interaction controller doesn't keep itself alive during presentation. lame.
 
 @end
@@ -642,6 +664,11 @@ static NSMutableDictionary *sSpecsByName;
                 [_KFSpecItems addObject:specItem];
             } else {
                 NSLog(@"%s: Couldn't read entry %@ in %@. Probably you're missing a key? Check KFTunableSpec.h.", __func__, rep, name);
+            }
+            
+            if ([specItem isKindOfClass:[_KFColorSilderSpecItem class]]) {
+                _KFColorSilderSpecItem *temp = (_KFColorSilderSpecItem *)specItem;
+                temp.delegate = self;
             }
         }
     }
@@ -780,6 +807,7 @@ static NSMutableDictionary *sSpecsByName;
         [mainView addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"V:|-[share]-|" options:0 metrics:nil views:views]];
     }
     
+;
     
     // We would like to add a close button on the top left corner of the mainView
     // It sticks out a bit from the mainView. In order to have the part that sticks out stay tappable, we make a contentView that completely contains the closeButton and the mainView.
@@ -810,8 +838,24 @@ static NSMutableDictionary *sSpecsByName;
 
     UIViewController *viewController = [[UIViewController alloc] init];
     [viewController setView:contentView];
+//    self.tempView = contentView;
     return viewController;
 }
+
+- (void)updateColorSpecConstraint:(NSLayoutConstraint *)constraint {
+
+    constraint.constant = (constraint.constant == 2) ? -110 : 2;
+    
+    [self.tempView setNeedsUpdateConstraints];
+    [UIView animateWithDuration:.5 animations:^{
+        [self.tempView layoutIfNeeded];
+    } completion:^(BOOL finished) {
+        NSLog(@"finished");
+    }];
+    
+
+}
+
 
 - (BOOL)controlsAreVisible {
     return [self window] != nil;
@@ -848,6 +892,7 @@ static NSMutableDictionary *sSpecsByName;
         
         [self setControlsXConstraint:[NSLayoutConstraint constraintWithItem:contentView attribute:NSLayoutAttributeCenterX relatedBy:NSLayoutRelationEqual toItem:window attribute:NSLayoutAttributeCenterX multiplier:1 constant:0]];
         [self setControlsYConstraint:[NSLayoutConstraint constraintWithItem:contentView attribute:NSLayoutAttributeCenterY relatedBy:NSLayoutRelationEqual toItem:window attribute:NSLayoutAttributeCenterY multiplier:1 constant:0]];
+        
         [window addConstraint:[self controlsXConstraint]];
         [window addConstraint:[self controlsYConstraint]];
         
