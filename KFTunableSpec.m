@@ -617,7 +617,6 @@ static UIColor *colorWithRGBAString(NSString *rgbString) {
 @property UIButton *closeButton;
 @property NSLayoutConstraint *controlsXConstraint;
 @property NSLayoutConstraint *controlsYConstraint;
-@property UIView *tempView;
 @property UIDocumentInteractionController *interactionController; // interaction controller doesn't keep itself alive during presentation. lame.
 
 @end
@@ -807,8 +806,6 @@ static NSMutableDictionary *sSpecsByName;
         [mainView addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"V:|-[share]-|" options:0 metrics:nil views:views]];
     }
     
-;
-    
     // We would like to add a close button on the top left corner of the mainView
     // It sticks out a bit from the mainView. In order to have the part that sticks out stay tappable, we make a contentView that completely contains the closeButton and the mainView.
 
@@ -844,16 +841,13 @@ static NSMutableDictionary *sSpecsByName;
 
 - (void)updateColorSpecConstraint:(NSLayoutConstraint *)constraint {
 
-    constraint.constant = (constraint.constant == 2) ? -110 : 2;
-    
-    [self.tempView setNeedsUpdateConstraints];
-    [UIView animateWithDuration:.5 animations:^{
-        [self.tempView layoutIfNeeded];
-    } completion:^(BOOL finished) {
-        NSLog(@"finished");
-    }];
-    
+    [constraint setConstant:(constraint.constant == 2) ? -110 : 2];
 
+    [[self window] setNeedsUpdateConstraints];
+    [UIView animateWithDuration:.5 animations:^{
+        [[self window] layoutIfNeeded];
+    } completion:nil];
+    
 }
 
 
@@ -862,7 +856,9 @@ static NSMutableDictionary *sSpecsByName;
 }
 
 - (void)setControlsAreVisible:(BOOL)flag {
-    if (flag && ![self window]) {        
+    NSLog(@"%s", __PRETTY_FUNCTION__);
+
+    if (flag && ![self window]) {
         UIViewController *viewController = [self makeViewController];
         UIView *contentView = [viewController view];
         if ([self name]) {
@@ -885,7 +881,7 @@ static NSMutableDictionary *sSpecsByName;
         id metrics = @{@"widthLimit" : @(limitSize.width), @"heightLimit" : @(limitSize.height)};
         [contentView addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"H:[contentView(<=widthLimit)]" options:0 metrics:metrics views:views]];
         [contentView addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"V:[contentView(<=heightLimit)]" options:0 metrics:metrics views:views]];
-
+    
         UIGestureRecognizer *moveWindowReco = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(moveWindowWithReco:)];
         [contentView addGestureRecognizer:moveWindowReco];
         [moveWindowReco setDelegate:self];
