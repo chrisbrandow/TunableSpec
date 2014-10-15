@@ -274,8 +274,6 @@ typedef NS_ENUM(NSUInteger, KFSliderColorComponent) {
     KFBlue,
     KFAlpha
 };
-@protocol _KFColorSilderSpecItemDelegate;
-
 
 @interface _KFColorSilderSpecItem : _KFSpecItem <UIGestureRecognizerDelegate>
 @property (nonatomic) NSNumber *sliderMinValue;
@@ -289,13 +287,8 @@ typedef NS_ENUM(NSUInteger, KFSliderColorComponent) {
 @property (nonatomic) KFSliderColorComponent colorComponent;
 @property (nonatomic) NSInteger indexOfCurrentSlider; //I don't love that I'm using this. but currently need it for callout label maintin block
 @property (nonatomic) NSLayoutConstraint *bottomVerticalConstraint;
-@property (nonatomic, weak) id <_KFColorSilderSpecItemDelegate> delegate;
 @end
-@protocol _KFColorSilderSpecItemDelegate <NSObject>
 
-- (void)updateColorSpecConstraint:(NSLayoutConstraint *)constraint;
-
-@end
 
 
 @implementation _KFColorSilderSpecItem
@@ -402,8 +395,12 @@ typedef NS_ENUM(NSUInteger, KFSliderColorComponent) {
 }
 
 -(void)tapped:(UITapGestureRecognizer *)gr {
-
-    [self.delegate updateColorSpecConstraint:self.bottomVerticalConstraint];
+    [self.bottomVerticalConstraint setConstant:(self.bottomVerticalConstraint.constant == 2) ? -110 : 2];
+    
+    [[[[self container] superview] superview] setNeedsUpdateConstraints];
+    [UIView animateWithDuration:.5 animations:^{
+        [[[[self container] superview] superview] layoutIfNeeded];
+    } completion:nil];
 
 }
 
@@ -602,7 +599,7 @@ static UIColor *colorWithRGBAString(NSString *rgbString) {
 @end
 
 
-@interface KFTunableSpec () <UIDocumentInteractionControllerDelegate, UIGestureRecognizerDelegate, _KFColorSilderSpecItemDelegate> {
+@interface KFTunableSpec () <UIDocumentInteractionControllerDelegate, UIGestureRecognizerDelegate> {
     NSMutableArray *_KFSpecItems;
     NSMutableArray *_savedDictionaryRepresentations;
     NSUInteger _currentSaveIndex;
@@ -664,17 +661,10 @@ static NSMutableDictionary *sSpecsByName;
             } else {
                 NSLog(@"%s: Couldn't read entry %@ in %@. Probably you're missing a key? Check KFTunableSpec.h.", __func__, rep, name);
             }
-            
-            if ([specItem isKindOfClass:[_KFColorSilderSpecItem class]]) {
-                _KFColorSilderSpecItem *temp = (_KFColorSilderSpecItem *)specItem;
-                temp.delegate = self;
-            }
         }
     }
     return self;
 }
-
-
 
 - (id)init
 {
@@ -695,7 +685,7 @@ static NSMutableDictionary *sSpecsByName;
 
 - (void)addDoubleWithLabel:(NSString *)label forValue:(double)value andMinMaxValues:(NSArray *)minMax {
     //could wrap this into a lazily initiated method from the ***forKey
-    NSAssert([minMax count] <= 2, @"this spec requires a min and max value and no other", label);
+    NSAssert([minMax count] <= 2, @"this spec %@ requires a min and max value and no other", label);
     //put in the following intake logic
     NSNumber *min = @(0);
     NSNumber *max = @(value*2);
