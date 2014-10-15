@@ -289,8 +289,6 @@ typedef NS_ENUM(NSUInteger, KFSliderColorComponent) {
 @property (nonatomic) NSLayoutConstraint *bottomVerticalConstraint;
 @end
 
-
-
 @implementation _KFColorSilderSpecItem
 
 + (NSArray *)propertiesForJSONRepresentation {
@@ -395,9 +393,9 @@ typedef NS_ENUM(NSUInteger, KFSliderColorComponent) {
 }
 
 -(void)tapped:(UITapGestureRecognizer *)gr {
-    [self.bottomVerticalConstraint setConstant:(self.bottomVerticalConstraint.constant == 2) ? -110 : 2];
     
-    [[[[self container] superview] superview] setNeedsUpdateConstraints];
+    [self.bottomVerticalConstraint setConstant:(self.bottomVerticalConstraint.constant == 2) ? -110 : 2];
+    [[self container]  setNeedsUpdateConstraints];
     [UIView animateWithDuration:.5 animations:^{
         [[[[self container] superview] superview] layoutIfNeeded];
     } completion:nil];
@@ -442,7 +440,6 @@ typedef NS_ENUM(NSUInteger, KFSliderColorComponent) {
         return components[index];
         
     }
-    
 
     return 0;
 }
