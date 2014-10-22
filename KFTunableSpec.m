@@ -246,6 +246,7 @@ static NSString *CamelCaseToSpaces(NSString *camelCaseString) {
 
 - (void)showCallout:(id)sender {
 
+
     [UIView animateWithDuration:0.15 animations:^{
         [[self calloutView] setAlpha:1.0];
     }];
@@ -323,8 +324,7 @@ typedef NS_ENUM(NSUInteger, KFSliderColorComponent) {
         UIView *container = [[UIView alloc] init];
         [container setBackgroundColor:[[UIColor whiteColor] colorWithAlphaComponent:0.2]];
         [[container layer] setCornerRadius:5];
-        [container setClipsToBounds:YES];
-
+//        [container setClipsToBounds:YES];
         _KFCalloutView *callout = [[_KFCalloutView alloc] init];
         
         NSMutableArray *temp = [NSMutableArray new];
@@ -333,7 +333,7 @@ typedef NS_ENUM(NSUInteger, KFSliderColorComponent) {
         }
 
         [self setSliders:[NSArray arrayWithArray:temp]];
-        
+
         UISlider *lastSlider = nil;
         for (NSInteger i = 0; i < self.sliders.count; i++) { //used for i instead of forin, to ensure correct order
             
@@ -358,13 +358,15 @@ typedef NS_ENUM(NSUInteger, KFSliderColorComponent) {
             [self withOwner:self maintain:^(id owner, id objValue) { [currentSlider setValue:[self valueForSliderAtIndex:i]]; }];
 
         }
+        [self setSlidersVisible:NO];
+
         self.bottomVerticalConstraint = [NSLayoutConstraint constraintsWithVisualFormat:@"V:[lastSlider]-(-110)-|" options:0 metrics:nil views:NSDictionaryOfVariableBindings(lastSlider)].firstObject;
         [container addConstraint:self.bottomVerticalConstraint];
 
         [callout setTranslatesAutoresizingMaskIntoConstraints:NO];
         [container addSubview:callout];
 
-        UITapGestureRecognizer *dTap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(tapped:)];
+        UITapGestureRecognizer *dTap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(doubleTapped:)];
         dTap.numberOfTapsRequired = 2;
         dTap.numberOfTouchesRequired = 1;
         
@@ -392,15 +394,36 @@ typedef NS_ENUM(NSUInteger, KFSliderColorComponent) {
     return [self container];
 }
 
--(void)tapped:(UITapGestureRecognizer *)gr {
+-(void)doubleTapped:(UITapGestureRecognizer *)gr {
     
     [self.bottomVerticalConstraint setConstant:(self.bottomVerticalConstraint.constant == 2) ? -110 : 2];
+    CGFloat showSlider = (self.bottomVerticalConstraint.constant == 2) ? YES : NO;
+    
+    if (!showSlider) {
+        [self setSlidersVisible:showSlider];
+    }
+    
     [[self container]  setNeedsUpdateConstraints];
     [UIView animateWithDuration:.5 animations:^{
         [[[[self container] superview] superview] layoutIfNeeded];
-    } completion:nil];
+    } completion:^(BOOL finished) {
+        [self setSlidersVisible:showSlider];
+    }];
 
 }
+
+- (void)setSlidersVisible:(BOOL)showSliders {
+    
+    CGFloat sliderOpacity = showSliders ? 1.0 : 0;
+    
+    [self.sliders enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
+        [UIView animateWithDuration:.05 animations:^{
+            [[obj layer] setOpacity:(idx) ? sliderOpacity : 1];
+        }];
+        [obj setEnabled:(idx) ? showSliders : 1];
+    }];
+}
+
 
 - (void)takeColorSliderValue:(UISlider *)slider {
     
@@ -436,9 +459,7 @@ typedef NS_ENUM(NSUInteger, KFSliderColorComponent) {
     //updated for hue
     CGFloat *components = malloc(4*sizeof(CGFloat));
     if ([colorWithRGBAString([self colorValue]) getHue:&components[0] saturation:&components[1] brightness:&components[2] alpha:&components[3]]) {
-        
         return components[index];
-        
     }
 
     return 0;
@@ -460,6 +481,7 @@ typedef NS_ENUM(NSUInteger, KFSliderColorComponent) {
 }
 
 - (void)showCallout:(id)sender {
+
     UISlider *slider = sender;
     self.indexOfCurrentSlider = [self.sliders indexOfObject:slider];
     [UIView animateWithDuration:0.15 animations:^{
@@ -468,6 +490,7 @@ typedef NS_ENUM(NSUInteger, KFSliderColorComponent) {
 }
 
 - (void)hideCallout:(id)sender {
+
     [UIView animateWithDuration:0.15 animations:^{
         [[self calloutView] setAlpha:0.0];
 
@@ -822,21 +845,9 @@ static NSMutableDictionary *sSpecsByName;
 
     UIViewController *viewController = [[UIViewController alloc] init];
     [viewController setView:contentView];
-//    self.tempView = contentView;
+
     return viewController;
 }
-
-- (void)updateColorSpecConstraint:(NSLayoutConstraint *)constraint {
-
-    [constraint setConstant:(constraint.constant == 2) ? -110 : 2];
-
-    [[self window] setNeedsUpdateConstraints];
-    [UIView animateWithDuration:.5 animations:^{
-        [[self window] layoutIfNeeded];
-    } completion:nil];
-    
-}
-
 
 - (BOOL)controlsAreVisible {
     return [self window] != nil;
