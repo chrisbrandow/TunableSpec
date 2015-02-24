@@ -83,6 +83,7 @@ static UIImage *CalloutArrowImage();
     if (![_objectValue isEqual:objectValue]) {
         _objectValue = objectValue;
         objectValue = [self objectValue];
+        NSLog(@"called the block");
         for (id owner in _maintenanceBlocksByOwner) {
             for (void (^maintenanceBlock)(id owner, id objValue) in [_maintenanceBlocksByOwner objectForKey:owner]) {
                 maintenanceBlock(owner, objectValue);
@@ -324,7 +325,7 @@ typedef NS_ENUM(NSUInteger, KFSliderColorComponent) {
         UIView *container = [[UIView alloc] init];
         [container setBackgroundColor:[[UIColor whiteColor] colorWithAlphaComponent:0.2]];
         [[container layer] setCornerRadius:5];
-//        [container setClipsToBounds:YES];
+
         _KFCalloutView *callout = [[_KFCalloutView alloc] init];
         
         NSMutableArray *temp = [NSMutableArray new];
